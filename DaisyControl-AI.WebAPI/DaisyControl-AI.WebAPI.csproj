@@ -11,4 +11,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DaisyControl-AI.Common\DaisyControl-AI.Common.csproj" />
+    <ProjectReference Include="..\DaisyControl-AI.Core\DaisyControl-AI.Core.csproj" />
+  </ItemGroup>
+
 </Project>
