@@ -1,12 +1,11 @@
-﻿using DaisyControl_AI.WebAPI.Dtos;
+﻿using System.Text.Json;
 using DaisyControl_AI.WebAPI.Workflows;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace DaisyControl_AI.WebAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]/[action]")]
+    [Route("api/[controller]")]
     public class MainController : ControllerBase
     {
         private IWorkflow workflow;
@@ -17,15 +16,13 @@ namespace DaisyControl_AI.WebAPI.Controllers
         }
 
         /// <summary>
-        /// Sends a new message to the AI from a user.
+        /// Just a ping-like endpoint.
         /// </summary>
-        /// <param name="mainPostSendMessageToAIDto"></param>
-        /// <returns></returns>
+        [Route("users/{userId}/teapot")]
         [HttpPost]
-        public async Task<ActionResult<string>> SendMessageToAI([FromBody] MainPostSendMessageToAIDto mainPostSendMessageToAIDto)
+        public async Task<ActionResult<string>> Teapot(string userId)
         {
-            var result = await workflow.Post(mainPostSendMessageToAIDto);
-            return JsonSerializer.Serialize(result);
+            return JsonSerializer.Serialize("I am a teapot");
         }
     }
 }

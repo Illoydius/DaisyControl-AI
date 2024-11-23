@@ -1,0 +1,5 @@
+{
+    "$type": "DaisyControl_AI.Common.Configuration.DaisyControlConfig, DaisyControl-AI.Common",
+    "DiscordBotSecretToken": "SET_YOUR_BOT_TOKEN_HERE",
+    "LogVerbosity": "Verbose"
+}
