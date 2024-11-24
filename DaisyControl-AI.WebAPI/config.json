@@ -1,5 +1,12 @@
 {
     "$type": "DaisyControl_AI.Common.Configuration.DaisyControlConfig, DaisyControl-AI.Common",
-    "DiscordBotSecretToken": "SET_YOUR_BOT_TOKEN_HERE",
+    "DiscordBotConfiguration": {
+        "Enabled": true, // Enable the Discord Bot feature to be able to communicate to user(s) using discord
+        "SecretToken": "SET_YOUR_BOT_TOKEN_HERE", // SET_YOUR_BOT_TOKEN_HERE
+        "System": {
+            "Enabled": true // Enable the Discord Bot SYSTEM feature. The user(s) will be notified with [SYSTEM] messages as feedback
+
+        }
+    },
     "LogVerbosity": "Verbose"
 }

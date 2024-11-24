@@ -1,6 +1,4 @@
 using DaisyControl_AI.Core.Comms.Discord;
-using DaisyControl_AI.Core.Comms.Discord.Commands;
-using DaisyControl_AI.Core.Comms.Discord.UserMessages;
 namespace DaisyControl_AI.WebAPI
 {
     class Program
@@ -32,9 +30,6 @@ namespace DaisyControl_AI.WebAPI
             app.UseAuthorization();
 
             app.MapControllers();
-
-            // TODO: put this into a bg worker
-            DiscordWorker discordWorker = new DiscordWorker(new DiscordBotCommandHandler(), new DiscordBotUserMessageHandler());
 
             app.Run();
         }
