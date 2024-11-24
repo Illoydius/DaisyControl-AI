@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DaisyControl-AI.Common\DaisyControl-AI.Common.csproj" />
+    <ProjectReference Include="..\DaisyControl-AI.Storage.Dtos\DaisyControl-AI.Storage.Dtos.csproj" />
+    <ProjectReference Include="..\DaisyControl-AI.Storage\DaisyControl-AI.Storage.csproj" />
   </ItemGroup>
 
 </Project>

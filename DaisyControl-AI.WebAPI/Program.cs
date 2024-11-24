@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace DaisyControl_AI.WebAPI
 {
     class Program
@@ -8,8 +10,14 @@ namespace DaisyControl_AI.WebAPI
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services
+                .AddControllers(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
+                .AddJsonOptions(option =>
+            {
+                option.JsonSerializerOptions.AllowTrailingCommas = true;
+                option.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
+
             builder.Services.AddEndpointsApiExplorer();
 
             Services.ConfigureServices(builder.Services);

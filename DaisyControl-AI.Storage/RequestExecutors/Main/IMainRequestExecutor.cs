@@ -3,6 +3,6 @@
     public interface IMainRequestExecutor
     {
         Task<bool> ExecuteAsync();
-        Task<string> GetResponseAsync();
+        Task<object> GetResponseAsync();
     }
 }

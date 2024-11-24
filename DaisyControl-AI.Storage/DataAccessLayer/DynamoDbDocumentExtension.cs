@@ -24,7 +24,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             // Note that serializing directly the dataItem using Json.Text doesn't serialize child properties, which was working with newtonsoft. The following code fix that behaviour.
             string serializedValue = dataItem switch
             {
-                DaisyControlAddUserDto daisyControlAddUserDto => JsonSerializer.Serialize(daisyControlAddUserDto, serializerOptions),
+                DaisyControlAddUserRequestDto daisyControlAddUserDto => JsonSerializer.Serialize(daisyControlAddUserDto, serializerOptions),
                 _ => throw new Exception($"Type {dataItem.GetType()} is unhandled."),
             };
 

@@ -78,7 +78,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     return null; // Item not found
                 }
 
-                var responseDocument = Document.FromAttributeMap(userItemsResult.Item); ;
+                var responseDocument = Document.FromAttributeMap(userItemsResult.Item);
 
                 var jsonResponse = responseDocument.ToJson();
                 var userDto = JsonSerializer.Deserialize<DaisyControlStorageUserDto>(jsonResponse);
@@ -93,7 +93,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         }
 
         /// <inheritdoc />
-        public async Task<DaisyControlAddUserDto> TryAddUserAsync(DaisyControlAddUserDto daisyControlAddUserDto)
+        public async Task<DaisyControlAddUserRequestDto> TryAddUserAsync(DaisyControlAddUserRequestDto daisyControlAddUserDto)
         {
             if (daisyControlAddUserDto == null)
             {
@@ -107,7 +107,6 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
 
             try
             {
-                var a = daisyControlAddUserDto.ToDocument(null).ToAttributeMap();
                 var userItemsResult = await dynamoDBClient.PutItemAsync(new PutItemRequest
                 {
                     TableName = userTableName,
@@ -122,7 +121,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 return daisyControlAddUserDto;
             } catch (ConditionalCheckFailedException)
             {
-                throw new CommonException("fb23d483-9131-45f8-90f4-3bd192bfe520", $"User was created by another instance. User [{daisyControlAddUserDto.Name}] won't be created to avoid duplicates.");
+                throw new CommonException("fb23d483-9131-45f8-90f4-3bd192bfe520", $"User was created by another instance. User [{daisyControlAddUserDto.Username}] won't be created to avoid duplicates.");
             } catch (AmazonClientException amazonClientException) when (amazonClientException.Message.Contains(AssumeRoleAwsExceptionErrorMessage, StringComparison.OrdinalIgnoreCase))
             {
                 // This is a flaky error, retrying without change fix most of the occurrence
@@ -136,7 +135,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             } catch (Exception ex)
             {
                 // rewrite exception
-                throw new CommonException("008d82d9-4181-4466-be67-07533b912df0", $"Unhandled exception when querying database. Failed to add User or Name [{daisyControlAddUserDto.Name}] to storage. Exception message [{ex.Message}].", ex);
+                throw new CommonException("008d82d9-4181-4466-be67-07533b912df0", $"Unhandled exception when querying database. Failed to add User or Name [{daisyControlAddUserDto.Username}] to storage. Exception message [{ex.Message}].", ex);
             }
         }
     }

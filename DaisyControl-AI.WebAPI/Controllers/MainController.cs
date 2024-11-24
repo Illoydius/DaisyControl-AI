@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using DaisyControl_AI.WebAPI.Workflows;
+﻿using DaisyControl_AI.WebAPI.Workflows;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DaisyControl_AI.WebAPI.Controllers
@@ -22,7 +21,7 @@ namespace DaisyControl_AI.WebAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<string>> Teapot(string userId)
         {
-            return JsonSerializer.Serialize("I am a teapot");
+            return "I am a teapot";
         }
     }
 }

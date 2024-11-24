@@ -14,7 +14,7 @@ namespace DaisyControl_AI.Storage.Workflows.Main
             this.daisyControlDal = daisyControlDal;
         }
 
-        public async Task<string> ExecuteAsync(IDto postDto)
+        public async Task<object> ExecuteAsync(IStorageDto postDto)
         {
             if (postDto == null)
             {

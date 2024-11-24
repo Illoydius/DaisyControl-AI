@@ -5,13 +5,13 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
 {
     public class DaisyControlAddUserRequestExecutor : IMainRequestExecutor
     {
-        private DaisyControlAddUserDto daisyControlAddUserDto = null;
+        private DaisyControlAddUserRequestDto daisyControlAddUserDto = null;
         private IDaisyControlDal daisyControlDal = null;
-        private string response = null;
+        private object response = null;
 
         public DaisyControlAddUserRequestExecutor(
             IDaisyControlDal daisyControlDal,
-            DaisyControlAddUserDto daisyControlAddUserDto)
+            DaisyControlAddUserRequestDto daisyControlAddUserDto)
         {
             this.daisyControlAddUserDto = daisyControlAddUserDto;
             this.daisyControlDal = daisyControlDal;
@@ -35,12 +35,12 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
             }
 
             // Add the new user
-            await daisyControlDal.TryAddUserAsync(daisyControlAddUserDto);
+            var userResult = await daisyControlDal.TryAddUserAsync(daisyControlAddUserDto);
 
-            response = $"User [{daisyControlAddUserDto.Name}] was correctly added to storage.";
+            response = userResult;
             return true;
         }
 
-        public async Task<string> GetResponseAsync() => response;
+        public async Task<object> GetResponseAsync() => response;
     }
 }

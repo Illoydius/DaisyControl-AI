@@ -1,12 +1,8 @@
 ﻿using System.Text.Json.Serialization;
-using DaisyControl_AI.Storage.DataAccessLayer;
 
-namespace DaisyControl_AI.Storage.Dtos.Requests
+namespace DaisyControl_AI.Storage.Dtos.Response
 {
-    /// <summary>
-    /// Represent a request to add a new user to the database.
-    /// </summary>
-    public class DaisyControlAddUserDto : IDto, IDataItem
+    public class DaisyControlUserResponseDto : IStorageDto
     {
         [JsonPropertyName("userId")]
         public string Id { get; set; }
@@ -14,8 +10,14 @@ namespace DaisyControl_AI.Storage.Dtos.Requests
         [JsonPropertyName("revision")]
         public long Revision { get; set; }
 
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
+        [JsonPropertyName("username")]
+        public string Username { get; set; }
+
+        [JsonPropertyName("firstName")]
+        public string FirstName { get; set; }
+
+        [JsonPropertyName("lastName")]
+        public string LastName { get; set; }
 
         [JsonPropertyName("lastModifiedAt")]
         public DateTimeOffset LastModifiedAtUtc { get; set; }

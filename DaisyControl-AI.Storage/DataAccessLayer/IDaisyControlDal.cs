@@ -6,6 +6,6 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
     public interface IDaisyControlDal
     {
         Task<DaisyControlStorageUserDto> TryGetUserAsync(string userId);
-        Task<DaisyControlAddUserDto> TryAddUserAsync(DaisyControlAddUserDto daisyControlAddUserDto);
+        Task<DaisyControlAddUserRequestDto> TryAddUserAsync(DaisyControlAddUserRequestDto daisyControlAddUserDto);
     }
 }

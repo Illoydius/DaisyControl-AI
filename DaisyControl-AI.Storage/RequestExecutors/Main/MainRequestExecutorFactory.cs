@@ -6,12 +6,14 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
 {
     public static class MainRequestExecutorFactory
     {
-        public static IMainRequestExecutor GenerateExecutor(IDaisyControlDal daisyControlDal, IDto postDto)
+        public static IMainRequestExecutor GenerateExecutor(IDaisyControlDal daisyControlDal, IStorageDto postDto)
         {
             switch (postDto)
             {
-                case DaisyControlAddUserDto daisyControlAddUserDto:
+                case DaisyControlAddUserRequestDto daisyControlAddUserDto:
                     return new DaisyControlAddUserRequestExecutor(daisyControlDal, daisyControlAddUserDto);
+                case DaisyControlGetUserRequestDto daisyControlGetUserDto:
+                    return new DaisyControlGetUserRequestExecutor(daisyControlDal, daisyControlGetUserDto);
                 default:
                     return null;// TODO : replace with unhandledExc
             }
