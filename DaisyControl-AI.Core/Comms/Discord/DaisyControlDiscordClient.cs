@@ -121,7 +121,6 @@ namespace DaisyControl_AI.Core.Comms.Discord
         public async Task SendDirectMessageAsync(ulong dmChannelId, ulong userId, DaisyControlMessageType messageType, string message)
         {
             var channel = await discordSocketClient.GetDMChannelAsync(dmChannelId);
-            //var user = discordSocketClient.GetUser(userId);
 
             if (channel == null)
             {

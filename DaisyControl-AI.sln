@@ -5,11 +5,13 @@ VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaisyControl-AI.WebAPI", "DaisyControl-AI.WebAPI\DaisyControl-AI.WebAPI.csproj", "{B90014FA-74B7-4ACD-835E-EBE9712A220D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaisyControl-AI.Core", "DaisyControl-AI.Core\DaisyControl-AI.Core.csproj", "{D5896440-4E8F-443E-BCED-BC23016B6A8E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaisyControl-AI.Core", "DaisyControl-AI.Core\DaisyControl-AI.Core.csproj", "{D5896440-4E8F-443E-BCED-BC23016B6A8E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaisyControl-AI.Common", "DaisyControl-AI.Common\DaisyControl-AI.Common.csproj", "{25C07B72-321D-4166-9187-0F729648EC16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaisyControl-AI.Common", "DaisyControl-AI.Common\DaisyControl-AI.Common.csproj", "{25C07B72-321D-4166-9187-0F729648EC16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaisyControl-AI.Tests", "DaisyControl-AI.Tests\DaisyControl-AI.Tests.csproj", "{2CC3E8DA-7D00-4D9B-BF05-36C2EFDF57AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaisyControl-AI.Tests", "DaisyControl-AI.Tests\DaisyControl-AI.Tests.csproj", "{2CC3E8DA-7D00-4D9B-BF05-36C2EFDF57AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaisyControl-AI.Storage", "DaisyControl-AI.Storage\DaisyControl-AI.Storage.csproj", "{E441ACA5-7F34-4C5C-BF1E-6F89FD5FE024}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{2CC3E8DA-7D00-4D9B-BF05-36C2EFDF57AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CC3E8DA-7D00-4D9B-BF05-36C2EFDF57AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CC3E8DA-7D00-4D9B-BF05-36C2EFDF57AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E441ACA5-7F34-4C5C-BF1E-6F89FD5FE024}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E441ACA5-7F34-4C5C-BF1E-6F89FD5FE024}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E441ACA5-7F34-4C5C-BF1E-6F89FD5FE024}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E441ACA5-7F34-4C5C-BF1E-6F89FD5FE024}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,7 +2,7 @@
 {
     public class WebApiException : CommonException
     {
-        public WebApiException(int errorCode, string message, Exception innerException = null) : base(errorCode, message, innerException)
+        public WebApiException(string errorCode, string message, Exception innerException = null) : base(errorCode, message, innerException)
         {
         }
     }

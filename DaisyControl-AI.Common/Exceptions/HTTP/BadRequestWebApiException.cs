@@ -2,7 +2,7 @@
 {
     public class BadRequestWebApiException : WebApiException
     {
-        public BadRequestWebApiException(int errorCode, string message, Exception innerException = null) : base(errorCode, message, innerException)
+        public BadRequestWebApiException(string errorCode, string message, Exception innerException = null) : base(errorCode, message, innerException)
         {
         }
     }
