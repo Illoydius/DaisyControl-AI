@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using DaisyControl_AI.Common.Diagnostics;
+﻿using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Core.Comms.Discord.Commands.Executors;
 using Discord;
 using Discord.WebSocket;

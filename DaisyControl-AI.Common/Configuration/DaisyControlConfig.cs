@@ -15,6 +15,8 @@ namespace DaisyControl_AI.Common.Configuration
         // ********************************************************************
         public DiscordBotConfiguration DiscordBotConfiguration { get; set; }
 
+        public InferenceServerConfiguration InferenceServerConfiguration { get; set; }
+
         [JsonConverter(typeof(StringEnumConverter))]
         public LogVerbosity LogVerbosity { get; set; } = LogVerbosity.Minimal;
     }

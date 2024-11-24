@@ -94,7 +94,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
                 return;
             }
 
-            await discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage);
+            await discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage, replyToUserCallback, sendChannelMessageCallback);
         }
 
         private async Task MessageUpdated(Cacheable<IMessage, ulong> cahedMessages, SocketMessage updatedMessage, ISocketMessageChannel channel)

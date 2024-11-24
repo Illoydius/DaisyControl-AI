@@ -2,15 +2,17 @@
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
 using DaisyControl_AI.Core.DaisyMind;
+using DaisyControl_AI.Core.InferenceServer;
 using DaisyControl_AI.Storage.Dtos.Response;
 using Discord;
 using Discord.WebSocket;
+using static DaisyControl_AI.Core.Comms.Discord.DaisyControlDiscordClient;
 
 namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 {
     public class DiscordBotUserMessageHandler : IDiscordBotUserMessageHandler
     {
-        public async Task HandleNewClientMessageAsync(SocketUserMessage socketUserMessage)
+        public async Task HandleNewClientMessageAsync(SocketUserMessage socketUserMessage, ReplyToUserCallback replyToUserCallback, SendChannelMessageCallback sendChannelMessageCallback)
         {
             if (socketUserMessage?.Author == null)
             {
@@ -37,17 +39,26 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             // Next, we want to create the AI "DaisyMind" related to that User. (A User could personalize the bot personality, for instance, so it's unique for each user)
             DaisyControlMind daisyMind = await DaisyMindFactory.GenerateDaisyMind(user).ConfigureAwait(false);
 
-            if (daisyMind.DaisyMemory.User?.CharacterSheet?.FirstName == null)
-            {
-                // New user, go to onboarding handling
-                // We'll add a new LifeEvent here, something like "XXX just sent you the following text message "YYY", build a text message reply, you can use smileys. ...
+            InferenceServerPromptResultResponseDto AIresponse = await InferenceServerQueryer.GenerateStandardAiResponseAsync("You are an helpful assistant. Limit your next reply to less than 50 words.").ConfigureAwait(false);
 
-            } else
+            if (AIresponse == null)
             {
-                // The user is known, go to the main handling
-
-                // TODO
+                LoggingManager.LogToFile("8397ea94-b6aa-4ae4-bd23-f69a81474800", $"AIResponse was empty in response generation to user [{socketUserMessage.Author.Id}] message [{socketUserMessage}].");
+                return;
             }
+            await replyToUserCallback(socketUserMessage.Channel.GetChannelType(), socketUserMessage.Channel.Id, socketUserMessage.Author.Id, DaisyControlMessageType.User, AIresponse.Text);
+
+            //if (daisyMind.DaisyMemory.User?.CharacterSheet?.FirstName == null)
+            //{
+            //    // New user, go to onboarding handling
+            //    // We'll add a new LifeEvent here, something like "XXX just sent you the following text message "YYY", build a text message reply, you can use smileys. ...
+
+            //} else
+            //{
+            //    // The user is known, go to the main handling
+
+            //    // TODO
+            //}
         }
 
         public async Task HandleUpdatedMessageAsync(Cacheable<IMessage, ulong> cahedMessages, IMessage previousMessage, SocketMessage updatedMessage, ISocketMessageChannel channel)

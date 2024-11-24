@@ -8,5 +8,10 @@
 
         }
     },
+    "InferenceServerConfiguration": {
+        "MaxContextLength": 16384, // Retrieve the current max context length setting value
+        "MaxTokensToGenerateInSingleQueryLength": 32, // Retrieve the current max length (amount to generate) setting value
+        "UrlGeneratePrompt": "http://localhost:5001/api/v1/generate" // Generate text with a specified prompt
+    },
     "LogVerbosity": "Verbose"
 }
