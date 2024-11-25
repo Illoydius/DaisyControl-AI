@@ -1,5 +1,4 @@
 ﻿using DaisyControl_AI.Storage.Dtos.Response;
-using DaisyControl_AI.Storage.Dtos.Storage;
 
 namespace DaisyControl_AI.Core.DaisyMind.DaisyMemory.User
 {
@@ -8,6 +7,6 @@ namespace DaisyControl_AI.Core.DaisyMind.DaisyMemory.User
     /// </summary>
     public class DaisyControlUserMemory
     {
-        public DaisyControlUserResponseDto CharacterSheet { get; set; }
+        public DaisyControlUserResponseDto Global { get; set; }
     }
 }

@@ -57,5 +57,33 @@ namespace DaisyControl_AI.Common.HttpRequest
                 return null;
             }
         }
+
+        public async Task<bool> UpdateUserAsync(DaisyControlUserResponseDto user)
+        {
+            if (user == null)
+            {
+                return false;
+            }
+
+            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/main/users/{user.Id}";
+
+            var httpContent = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
+            var serializedResponse = await CustomHttpClient.TryPutAsync(url, httpContent).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(serializedResponse))
+            {
+                return false;
+            }
+
+            try
+            {
+                var responseDto = JsonSerializer.Deserialize<DaisyControlUserResponseDto>(serializedResponse);
+                return true;
+            } catch (Exception e)
+            {
+                LoggingManager.LogToFile("707b4170-d6c3-4cc0-9f58-41be5f88b3ee", $"Failed to deserialize response of type [{typeof(DaisyControlUserResponseDto)}] from url [{url}].");
+                return false;
+            }
+        }
     }
 }

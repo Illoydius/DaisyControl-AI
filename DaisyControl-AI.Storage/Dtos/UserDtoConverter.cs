@@ -16,6 +16,7 @@ namespace DaisyControl_AI.Storage.Dtos
             {
                 CreatedAtUtc = user.CreatedAtUtc,
                 Id = user.Id,
+                MessagesHistory = user.MessagesHistory,
                 LastModifiedAtUtc = user.LastModifiedAtUtc,
                 LastName = user.LastName,
                 FirstName = user.FirstName,

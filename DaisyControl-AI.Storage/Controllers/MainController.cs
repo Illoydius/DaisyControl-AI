@@ -44,6 +44,17 @@ namespace DaisyControl_AI.Storage.Controllers
         }
 
         /// <summary>
+        /// Update (full obj) User to storage.
+        /// </summary>
+        [Route("users/{userId}")]
+        [HttpPut]
+        public async Task<ActionResult<object>> UpdateUser(DaisyControlUpdateUserRequestDto userRequest)
+        {
+            object response = await workflow.ExecuteAsync(userRequest);
+            return response;
+        }
+
+        /// <summary>
         /// Just a ping-like endpoint.
         /// </summary>
         [Route("users/{userId}/teapot")]

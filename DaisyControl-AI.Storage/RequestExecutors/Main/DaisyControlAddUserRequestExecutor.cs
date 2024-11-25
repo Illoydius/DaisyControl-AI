@@ -21,7 +21,7 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
         {
             if (daisyControlAddUserDto?.Id == null)
             {
-                response = "Invalid Dto. Request payload was incorrect.";
+                response = "Invalid Dto. User Id was invalid. Request payload was incorrect.";
                 return false;
             }
 
@@ -41,6 +41,6 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
             return true;
         }
 
-        public async Task<object> GetResponseAsync() => response;
+        public async Task<object> GetResponseAsync() => await Task.FromResult(response);
     }
 }

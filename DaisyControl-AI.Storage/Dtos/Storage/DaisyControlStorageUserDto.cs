@@ -22,6 +22,12 @@ namespace DaisyControl_AI.Storage.Dtos.Storage
         [JsonPropertyName("lastName")]
         public string LastName { get; set; }
 
+        /// <summary>
+        /// Represent the conversation between the user and the AI
+        /// </summary>
+        [JsonPropertyName("messagesHistory")]
+        public List<DaisyControlMessage> MessagesHistory { get; set; }
+
         [JsonPropertyName("lastModifiedAt")]
         public DateTimeOffset LastModifiedAtUtc { get; set; }
 

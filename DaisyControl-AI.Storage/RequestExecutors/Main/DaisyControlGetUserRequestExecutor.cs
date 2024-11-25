@@ -33,6 +33,6 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
             return true;
         }
 
-        public async Task<object> GetResponseAsync() => response;
+        public async Task<object> GetResponseAsync() => await Task.FromResult(response);
     }
 }

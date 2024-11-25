@@ -53,8 +53,8 @@ namespace DaisyControl_AI.Core.InferenceServer
 
             var httpContent = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
             string queryResult = await CustomHttpClient.TryPostAsync(config.InferenceServerConfiguration.UrlGeneratePrompt, httpContent).ConfigureAwait(false);
-
-            return ParseMessageFromInferenceServerResponse(queryResult)?.Results?.FirstOrDefault();
+            InferenceServerPromptResultResponseDto AIResponse = ParseMessageFromInferenceServerResponse(queryResult)?.Results?.FirstOrDefault();
+            return AIResponse;
         }
     }
 }

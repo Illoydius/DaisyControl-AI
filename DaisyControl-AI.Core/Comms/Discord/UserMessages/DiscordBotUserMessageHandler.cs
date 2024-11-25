@@ -1,8 +1,11 @@
 ﻿using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
+using DaisyControl_AI.Common.Utils;
 using DaisyControl_AI.Core.DaisyMind;
 using DaisyControl_AI.Core.InferenceServer;
+using DaisyControl_AI.Core.InferenceServer.Context;
+using DaisyControl_AI.Core.Utils;
 using DaisyControl_AI.Storage.Dtos.Response;
 using Discord;
 using Discord.WebSocket;
@@ -39,14 +42,54 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             // Next, we want to create the AI "DaisyMind" related to that User. (A User could personalize the bot personality, for instance, so it's unique for each user)
             DaisyControlMind daisyMind = await DaisyMindFactory.GenerateDaisyMind(user).ConfigureAwait(false);
 
-            InferenceServerPromptResultResponseDto AIresponse = await InferenceServerQueryer.GenerateStandardAiResponseAsync("You are an helpful assistant. Limit your next reply to less than 50 words.").ConfigureAwait(false);
+            // Add the new user message to DaisyMind memory
+            var userMessage = new Storage.Dtos.DaisyControlMessage
+            {
+                ReferentialType = Storage.Dtos.MessageReferentialType.User,
+                MessageContent = socketUserMessage.ToString(),
+            };
+
+            // Response was correctly sent to user. Save the AI response to storage
+            daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
+            daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(userMessage);
+
+            InferenceServerPromptResultResponseDto AIresponse = await InferenceServerQueryer.GenerateStandardAiResponseAsync(ContextBuilder.BuildContext(daisyMind)).ConfigureAwait(false);
+
+            // Clean AI Response
+            AIresponse.Text = AIMessageUtils.CleanAIResponse(daisyMind, AIresponse.Text);
+
+            // TODO If response was null or badly formatted, try again?
 
             if (AIresponse == null)
             {
                 LoggingManager.LogToFile("8397ea94-b6aa-4ae4-bd23-f69a81474800", $"AIResponse was empty in response generation to user [{socketUserMessage.Author.Id}] message [{socketUserMessage}].");
                 return;
             }
-            await replyToUserCallback(socketUserMessage.Channel.GetChannelType(), socketUserMessage.Channel.Id, socketUserMessage.Author.Id, DaisyControlMessageType.User, AIresponse.Text);
+
+            // TODO: In here, we could save the AI response to the DB in a status "awaiting delivery" and when it's delivered to the user, update the status.
+            // Send response to user
+            bool success = await replyToUserCallback(socketUserMessage.Channel.GetChannelType(), socketUserMessage.Channel.Id, socketUserMessage.Author.Id, DaisyControlMessageType.User, AIresponse.Text);
+
+            if (!success)
+            {
+                LoggingManager.LogToFile("59024fd1-6c43-4e10-880c-1406a28e1741", $"Message wasn't sent to user [{socketUserMessage.Author.Id}]. Aborting the reply handling for this message.");
+                return;
+            }
+
+            // Add the AI response
+            daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(new Storage.Dtos.DaisyControlMessage
+            {
+                ReferentialType = Storage.Dtos.MessageReferentialType.Assistant,
+                MessageContent = AIresponse.Text,
+            });
+
+            bool storageUpdateSuccess = await HttpRequestClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
+
+            if (!storageUpdateSuccess)
+            {
+                LoggingManager.LogToFile("fa8faec1-1292-43b5-a467-1e7c8a214560", $"Message was sent to user [{socketUserMessage.Author.Id}], but couldn't be saved in storage! The AI will ignore this generated response in its following interaction [{AIresponse.Text}].");
+                return;
+            }
 
             //if (daisyMind.DaisyMemory.User?.CharacterSheet?.FirstName == null)
             //{

@@ -20,9 +20,9 @@ namespace DaisyControl_AI.Core.Comms.Discord
         IDiscordBotCommandHandler discordBotCommandHandler;
         IDiscordBotUserMessageHandler discordBotUserMessageHandler;
         CommandService fDiscordBotCommandService = new CommandService();
-        public delegate Task ReplyToUserCallback(ChannelType? channelType, ulong channelId, ulong userId, DaisyControlMessageType messageType, string message);
+        public delegate Task<bool> ReplyToUserCallback(ChannelType? channelType, ulong channelId, ulong userId, DaisyControlMessageType messageType, string message);
         ReplyToUserCallback replyToUserCallback;
-        public delegate Task SendChannelMessageCallback(ulong channelId, DaisyControlMessageType messageType, string message);
+        public delegate Task<bool> SendChannelMessageCallback(ulong channelId, DaisyControlMessageType messageType, string message);
         SendChannelMessageCallback sendChannelMessageCallback;
 
         public DaisyControlDiscordClient(
@@ -36,7 +36,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
 
             if (string.IsNullOrWhiteSpace(fDiscordBotToken))
             {
-                LoggingManager.LogToFile("35408ede-85fc-4e43-be33-b6cfe47eefd0", $"Invalid Discord Bot Token [{fDiscordBotToken}]. Please check your config.json. Fix your config file and restart the software.");
+                LoggingManager.LogToFile("35408ede-85fc-4e43-be33-b6cfe47eefd0", $"Invalid Discord Bot Token [{fDiscordBotToken}]. Please check your config.json. Fix your config file and restart the server.");
 
                 return;
             }
@@ -105,43 +105,46 @@ namespace DaisyControl_AI.Core.Comms.Discord
             await discordBotUserMessageHandler.HandleUpdatedMessageAsync(cahedMessages, previousMessage, updatedMessage, channel);
         }
 
-        public async Task SendMessageAsync(ulong channelId, DaisyControlMessageType messageType, string message)
+        public async Task<bool> SendMessageAsync(ulong channelId, DaisyControlMessageType messageType, string message)
         {
             var channel = await discordSocketClient.GetChannelAsync(channelId) as SocketTextChannel;
 
             if (channel == null)
             {
                 LoggingManager.LogToFile("7cb05d30-8ad1-4459-8596-bfe39e2ee97d", $"Couldn't send message [{message}] from bot to channelId [{channelId}]. Channel couldn't be found.");
-                return;
+                return false;
             }
 
-            await channel.SendMessageAsync(message);
+            LoggingManager.LogToFile("d4433dcc-e219-435a-86f7-e613e96476bd", $"AI sent the following channel message ([{messageType}]) to channelId [{channelId}] : [{message}].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+            var response = await channel.SendMessageAsync(message).ConfigureAwait(false);
+            return response != null;
         }
 
-        public async Task SendDirectMessageAsync(ulong dmChannelId, ulong userId, DaisyControlMessageType messageType, string message)
+        public async Task<bool> SendDirectMessageAsync(ulong dmChannelId, ulong userId, DaisyControlMessageType messageType, string message)
         {
             var channel = await discordSocketClient.GetDMChannelAsync(dmChannelId);
 
             if (channel == null)
             {
                 LoggingManager.LogToFile("c6b25136-57bb-40c0-b997-f8bf7c16c2a6", $"Couldn't send message [{message}] from bot to user [{userId}] in DM channelId [{dmChannelId}]. User couldn't be found.");
-                return;
+                return false;
             }
 
-            await channel.SendMessageAsync(message);
+            LoggingManager.LogToFile("66c2a1c0-118d-487e-b662-29b8f322bcd3", $"AI sent the following direct message ([{messageType}]) to userId [{userId}] in DM channelId [{dmChannelId}] : [{message}].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+            var response = await channel.SendMessageAsync(message);
+
+            return response != null;
         }
 
-        public async Task ReplyWithMessageAsync(ChannelType? channelType, ulong channelId, ulong userId, DaisyControlMessageType messageType, string message)
+        public async Task<bool> ReplyWithMessageAsync(ChannelType? channelType, ulong channelId, ulong userId, DaisyControlMessageType messageType, string message)
         {
             // Determine if we need to reply using a DM or a ChannelMessage
             switch (channelType)
             {
                 case ChannelType.Text:
-                    await SendMessageAsync(channelId, messageType, message);
-                    break;
+                    return await SendMessageAsync(channelId, messageType, message);
                 case ChannelType.DM:
-                    await SendDirectMessageAsync(channelId, userId, messageType, message);
-                    break;
+                    return await SendDirectMessageAsync(channelId, userId, messageType, message);
                 case ChannelType.Voice:
                 case ChannelType.Group:
                 case ChannelType.Category:
@@ -157,7 +160,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
                 case null:
                 default:
                     LoggingManager.LogToFile("1ada08d5-2ea5-4142-a5ef-b2ada931fd57", $"Couldn't send message [{message}] from bot to user [{userId}]. ChannelType [{channelType}] is unhandled.");
-                    return;
+                    return false;
             }
         }
 

@@ -12,6 +12,8 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
             {
                 case DaisyControlAddUserRequestDto daisyControlAddUserDto:
                     return new DaisyControlAddUserRequestExecutor(daisyControlDal, daisyControlAddUserDto);
+                    case DaisyControlUpdateUserRequestDto daisyControlUpdateUserDto:
+                    return new DaisyControlUpdateUserRequestExecutor(daisyControlDal, daisyControlUpdateUserDto);
                 case DaisyControlGetUserRequestDto daisyControlGetUserDto:
                     return new DaisyControlGetUserRequestExecutor(daisyControlDal, daisyControlGetUserDto);
                 default:

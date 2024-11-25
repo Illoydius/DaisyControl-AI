@@ -14,7 +14,6 @@ namespace DaisyControl_AI.Core.DaisyMind.DaisyMemory
         /// The list is ordered by oldest to newest.
         /// </summary>
         public List<IAILifeEvent> EventsHistory { get; set; }
-
-        public DaisyControlUserMemory User {get;set;}
+        public DaisyControlUserMemory User { get; set; }
     }
 }

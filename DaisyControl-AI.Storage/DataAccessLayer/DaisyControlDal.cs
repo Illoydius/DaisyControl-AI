@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
+using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.Exceptions;
 using DaisyControl_AI.Storage.Dtos.Requests;
 using DaisyControl_AI.Storage.Dtos.Storage;
@@ -12,10 +13,13 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
     public class DaisyControlDal : IDaisyControlDal
     {
         private const string AssumeRoleAwsExceptionErrorMessage = "Error calling AssumeRole for role";
+        private const int NbMsToDelayAfterProvisionException = 5000;
+        private const int NbMsUnreachableDbOnStartup = 30000;
         private string userTableName = "DaisyControl-Users";
         private AWSCredentials AWSCredentials = new BasicAWSCredentials("local", "local");
-        private string DynamoDBUri = "http://127.0.0.1:8000";
+        private string DynamoDBUri = "http://127.0.0.1:8822";
         private IAmazonDynamoDB dynamoDBClient = null;
+
 
         public DaisyControlDal()
         {
@@ -25,21 +29,37 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
 
         private async Task InitDatabase()
         {
-            ListTablesResponse tables = await dynamoDBClient.ListTablesAsync().ConfigureAwait(false);
-
-            if (!tables.TableNames.Contains(userTableName))
+            // Create a cancellationToken with a predefinite waiting time to avoid infinitely waiting on the DB here. If it's down, we want to EXIT instead of freezing to avoid scaling snowball
+            using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                await CreateTable(new CreateTableRequest(userTableName, new List<KeySchemaElement>
+                try
                 {
-                    new KeySchemaElement("userId", KeyType.HASH),
-                }, new List<AttributeDefinition>
+                    cancellationTokenSource.CancelAfter(NbMsUnreachableDbOnStartup);
+                    ListTablesResponse tables = await dynamoDBClient.ListTablesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+
+                    if (!tables.TableNames.Contains(userTableName))
+                    {
+                        await CreateTable(new CreateTableRequest(userTableName, new List<KeySchemaElement>
+                        {
+                            new KeySchemaElement("userId", KeyType.HASH),
+                        }, new List<AttributeDefinition>
+                        {
+                            new AttributeDefinition("userId", ScalarAttributeType.S),
+                        }, new ProvisionedThroughput
+                        {
+                            ReadCapacityUnits = 1000,
+                            WriteCapacityUnits = 1000,
+                        }));
+                    }
+                } catch (OperationCanceledException e)
                 {
-                    new AttributeDefinition("userId", ScalarAttributeType.S),
-                }, new ProvisionedThroughput
+                    string errMessage = $"The database was unreachable for [{NbMsUnreachableDbOnStartup}] ms on startup... aborting.";
+                    LoggingManager.LogToFile("a904301c-2a87-4f6f-bb2d-a626aa3d2892", errMessage);
+                    throw new CommonException("3fb7f9c1-0466-4f9c-bfab-48b69c75d7e4", errMessage, e);
+                } finally
                 {
-                    ReadCapacityUnits = 1000,
-                    WriteCapacityUnits = 1000,
-                }));
+                    cancellationTokenSource.Dispose();
+                }
             }
         }
 
@@ -85,6 +105,11 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
 
                 return userDto;
 
+            } catch (ProvisionedThroughputExceededException)
+            {
+                await Task.Delay(NbMsToDelayAfterProvisionException);
+
+                throw;
             } catch (Exception ex)
             {
                 // rewrite exception
@@ -122,20 +147,62 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             } catch (ConditionalCheckFailedException)
             {
                 throw new CommonException("fb23d483-9131-45f8-90f4-3bd192bfe520", $"User was created by another instance. User [{daisyControlAddUserDto.Username}] won't be created to avoid duplicates.");
-            } catch (AmazonClientException amazonClientException) when (amazonClientException.Message.Contains(AssumeRoleAwsExceptionErrorMessage, StringComparison.OrdinalIgnoreCase))
-            {
-                // This is a flaky error, retrying without change fix most of the occurrence
-                await Task.Delay(3000);
-                throw;
             } catch (ProvisionedThroughputExceededException)
             {
-                await Task.Delay(5000);
+                await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
             } catch (Exception ex)
             {
                 // rewrite exception
-                throw new CommonException("008d82d9-4181-4466-be67-07533b912df0", $"Unhandled exception when querying database. Failed to add User or Name [{daisyControlAddUserDto.Username}] to storage. Exception message [{ex.Message}].", ex);
+                throw new CommonException("008d82d9-4181-4466-be67-07533b912df0", $"Unhandled exception when querying database. Failed to add User of Name [{daisyControlAddUserDto.Username}] to storage. Exception message [{ex.Message}].", ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<DaisyControlUpdateUserRequestDto> TryUpdateUserAsync(DaisyControlUpdateUserRequestDto daisyControlUpdateUserDto)
+        {
+            if (daisyControlUpdateUserDto == null)
+            {
+                throw new ArgumentNullException(nameof(daisyControlUpdateUserDto));
+            }
+
+            long requestLastRevision = daisyControlUpdateUserDto.Revision;
+
+            var utcNow = DateTime.UtcNow;
+            daisyControlUpdateUserDto.LastModifiedAtUtc = utcNow;
+            daisyControlUpdateUserDto.Revision++;
+
+            try
+            {
+                var userItemsResult = await dynamoDBClient.PutItemAsync(new PutItemRequest
+                {
+                    TableName = userTableName,
+                    Item = daisyControlUpdateUserDto.ToDocument(null).ToAttributeMap(),
+                    ConditionExpression = "#revision = :revision",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        { "#revision", "revision" },
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":revision", new AttributeValue { N = requestLastRevision.ToString() } },
+                    },
+                }).ConfigureAwait(false);
+
+                return daisyControlUpdateUserDto;
+            } catch (ConditionalCheckFailedException)
+            {
+                throw new CommonException("e5f4ed44-3488-42a2-aa11-2a80405f73ca", $"Revision didn't match. User [{daisyControlUpdateUserDto.Username}] won't be updated.");
+            } catch (ProvisionedThroughputExceededException)
+            {
+                await Task.Delay(NbMsToDelayAfterProvisionException);
+
+                throw;
+            } catch (Exception ex)
+            {
+                // rewrite exception
+                throw new CommonException("bfc58783-5b54-4bd4-abcf-085b88f55e64", $"Unhandled exception when querying database. Failed to update User [{daisyControlUpdateUserDto.Id}] to storage. Exception message [{ex.Message}].", ex);
             }
         }
     }

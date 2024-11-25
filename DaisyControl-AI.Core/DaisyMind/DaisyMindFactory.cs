@@ -19,7 +19,7 @@ namespace DaisyControl_AI.Core.DaisyMind
                     //EventsHistory = Generate from DB..
                     User = new()
                     {
-                        CharacterSheet = userDto,
+                        Global = userDto,
                     }
                 }
             };
