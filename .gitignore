@@ -2,3 +2,7 @@
 */obj
 */bin/Debug
 */bin/Release
+/DaisyControl-AI.WebAPI/DaisyControl.log
+/docker/Storage/docker/dynamodb/shared-local-instance.db
+/DaisyControl-AI.Storage/DaisyControl.log
+/DaisyControl-AI.Storage/config.json

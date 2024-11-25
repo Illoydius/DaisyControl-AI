@@ -1,25 +1,37 @@
-var builder = WebApplication.CreateBuilder(args);
+using System.Text.Json.Serialization;
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+namespace DaisyControl_AI.WebAPI
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+
+            builder.Services
+                .AddControllers(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
+                .AddJsonOptions(option =>
+            {
+                option.JsonSerializerOptions.AllowTrailingCommas = true;
+                option.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
+
+            builder.Services.AddEndpointsApiExplorer();
+
+            Services.ConfigureServices(builder.Services);
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            app.UseHttpsRedirection();
+
+            app.UseAuthorization();
+
+            app.MapControllers();
+
+            app.Run();
+        }
+    }
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();

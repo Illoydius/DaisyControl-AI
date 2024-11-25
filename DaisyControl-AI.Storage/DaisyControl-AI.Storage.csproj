@@ -4,16 +4,17 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>DaisyControl_AI.WebAPI</RootNamespace>
+    <RootNamespace>DaisyControl_AI.Storage</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.403.7" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DaisyControl-AI.Common\DaisyControl-AI.Common.csproj" />
-    <ProjectReference Include="..\DaisyControl-AI.Core\DaisyControl-AI.Core.csproj" />
+    <ProjectReference Include="..\DaisyControl-AI.Storage.Dtos\DaisyControl-AI.Storage.Dtos.csproj" />
   </ItemGroup>
 
 </Project>

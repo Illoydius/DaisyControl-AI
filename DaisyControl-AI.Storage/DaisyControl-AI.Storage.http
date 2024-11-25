@@ -1,0 +1,6 @@
+@DaisyControl_AI.Storage_HostAddress = http://localhost:5182
+
+GET {{DaisyControl_AI.Storage_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

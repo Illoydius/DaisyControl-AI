@@ -7,4 +7,12 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DaisyControl-AI.Storage.Dtos\DaisyControl-AI.Storage.Dtos.csproj" />
+  </ItemGroup>
+
 </Project>
