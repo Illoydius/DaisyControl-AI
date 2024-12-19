@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using DaisyControl_AI.Core.DaisyMind.DaisyMemory.AI;
+using Newtonsoft.Json.Converters;
 
 namespace DaisyControl_AI.Storage.Dtos.Response
 {
@@ -31,5 +32,11 @@ namespace DaisyControl_AI.Storage.Dtos.Response
 
         [JsonPropertyName("createdAtUtc")]
         public DateTimeOffset CreatedAtUtc { get; set; }
+
+        [JsonPropertyName("nbUnprocessedMessages")]
+        public int NbUnprocessedMessages { get; set; }
+
+        [JsonPropertyName("status")]
+        public UserStatus Status { get; set; }
     }
 }

@@ -17,8 +17,8 @@ namespace DaisyControl_AI.WebAPI.Controllers
         /// <summary>
         /// Just a ping-like endpoint.
         /// </summary>
-        [Route("users/{userId}/teapot")]
-        [HttpPost]
+        [HttpGet]
+        [Route("teapot")]
         public async Task<ActionResult<string>> Teapot(string userId)
         {
             return "I am a teapot";

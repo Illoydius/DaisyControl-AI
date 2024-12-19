@@ -26,13 +26,13 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
             }
 
             // Get User from storage to check if it already exists
-            //var user = await daisyControlDal.TryGetUserAsync(daisyControlUpdateUserDto.Id);
+            var user = await daisyControlDal.TryGetUserAsync(daisyControlUpdateUserDto.Id);
 
-            //if (user != null)
-            //{
-            //    response = $"User with id [{daisyControlUpdateUserDto.Id}] already exists.";
-            //    return false;
-            //}
+            if (user == null)
+            {
+                response = $"User with id [{daisyControlUpdateUserDto.Id}] doesn't exists.";
+                return false;
+            }
 
             // Update the new user
             var userResult = await daisyControlDal.TryUpdateUserAsync(daisyControlUpdateUserDto);

@@ -1,17 +1,20 @@
 {
-    "$type": "DaisyControl_AI.Common.Configuration.DaisyControlConfig, DaisyControl-AI.Common",
-    "DiscordBotConfiguration": {
-        "Enabled": true, // Enable the Discord Bot feature to be able to communicate to user(s) using discord
-        "SecretToken": "SET_YOUR_BOT_TOKEN_HERE", // SET_YOUR_BOT_TOKEN_HERE
-        "System": {
-            "Enabled": true // Enable the Discord Bot SYSTEM feature. The user(s) will be notified with [SYSTEM] messages as feedback
+  "$type": "DaisyControl_AI.Common.Configuration.DaisyControlConfig, DaisyControl-AI.Common",
+  "DiscordBotConfiguration": {
+    "Enabled": true, // Enable the Discord Bot feature to be able to communicate to user(s) using discord
+    "SecretToken": "SET_YOUR_BOT_TOKEN_HERE", // SET_YOUR_BOT_TOKEN_HERE
+    "System": {
+      "Enabled": true // Enable the Discord Bot SYSTEM feature. The user(s) will be notified with [SYSTEM] messages as feedback
 
-        }
-    },
-    "InferenceServerConfiguration": {
-        "MaxContextLength": 16384, // Retrieve the current max context length setting value
-        "MaxTokensToGenerateInSingleQueryLength": 128, // Retrieve the current max length (amount to generate) setting value
-        "UrlGeneratePrompt": "http://localhost:5001/api/v1/generate" // Generate text with a specified prompt
-    },
-    "LogVerbosity": "Verbose"
+    }
+  },
+  "InferenceServerConfiguration": {
+    "MaxContextLength": 16384, // Retrieve the current max context length setting value
+    "MaxTokensToGenerateInSingleQueryLength": 128, // Retrieve the current max length (amount to generate) setting value
+    "UrlGeneratePrompt": "http://localhost:5001/api/v1/generate" // Generate text with a specified prompt
+  },
+  "StorageConfiguration": {
+    "usersWithMessagesToProcessIndexName": "Status-NbUnprocessedMessages-index"
+  },
+  "LogVerbosity": "Verbose"
 }

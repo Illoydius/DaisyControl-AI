@@ -22,6 +22,8 @@ namespace DaisyControl_AI.Storage.Dtos
                 FirstName = user.FirstName,
                 Username = user.Username,
                 Revision = user.Revision,
+                NbUnprocessedMessages = user.NbUnprocessedMessages,
+                Status = user.Status,
             };
         }
     }

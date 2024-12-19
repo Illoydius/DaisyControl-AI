@@ -12,10 +12,14 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
             {
                 case DaisyControlAddUserRequestDto daisyControlAddUserDto:
                     return new DaisyControlAddUserRequestExecutor(daisyControlDal, daisyControlAddUserDto);
-                    case DaisyControlUpdateUserRequestDto daisyControlUpdateUserDto:
+                case DaisyControlUpdateUserRequestDto daisyControlUpdateUserDto:
                     return new DaisyControlUpdateUserRequestExecutor(daisyControlDal, daisyControlUpdateUserDto);
                 case DaisyControlGetUserRequestDto daisyControlGetUserDto:
                     return new DaisyControlGetUserRequestExecutor(daisyControlDal, daisyControlGetUserDto);
+                case DaisyControlDeleteUserRequestDto daisyControlDeleteUserDto:
+                    return new DaisyControlDeleteUserRequestExecutor(daisyControlDal, daisyControlDeleteUserDto);
+                case DaisyControlGetUsersWithUnprocessedMessagesRequestDto daisyControlGetUsersWithUnprocessedMessagesRequestDto:
+                    return new DaisyControlGetUsersWithUnprocessedMessagesRequestExecutor(daisyControlDal, daisyControlGetUsersWithUnprocessedMessagesRequestDto);
                 default:
                     return null;// TODO : replace with unhandledExc
             }

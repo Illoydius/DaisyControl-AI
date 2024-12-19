@@ -28,9 +28,9 @@ namespace DaisyControl_AI.Common.HttpRequest
                 string responseBody = await response.Content.ReadAsStringAsync();
 
                 return responseBody;
-            } catch (HttpRequestException e)
+            } catch (HttpRequestException e) when (e.StatusCode != System.Net.HttpStatusCode.NotFound)
             {
-                LoggingManager.LogToFile("4f42bbef-f79a-4075-9d0f-9de8f856f853", $"GET HttpRequest to url [{url}] failed.", e);
+                LoggingManager.LogToFile("b5013697-8bd6-400f-9e4f-ed40c08dab6c", $"GET HttpRequest to url [{url}] failed.", e);
             }
 
             return null;

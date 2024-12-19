@@ -5,12 +5,17 @@ namespace DaisyControl_AI.Storage.Dtos
 {
     public class DaisyControlMessage
     {
-        //[JsonConverter(typeof(StringEnumConverter))]
-        [JsonConverter(typeof(JsonStringEnumConverter))]
         [JsonPropertyName("referentialType")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public MessageReferentialType ReferentialType { get; set; }
 
         [JsonPropertyName("messageContent")]
         public string MessageContent { get; set; }
+
+        [JsonPropertyName("messageStatus")]
+        public MessageStatus MessageStatus { get; set; }
+
+        [JsonPropertyName("messageSource")]
+        public MessageSource MessageSource { get; set; }
     }
 }

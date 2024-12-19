@@ -10,7 +10,7 @@ namespace DaisyControl_AI.Common.HttpRequest
     {
         public async Task<DaisyControlGetUserResponseDto> GetUserAsync(ulong userId)
         {
-            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/main/users/{userId}";
+            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/users/{userId}";
             var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(serializedResponse))
@@ -31,7 +31,7 @@ namespace DaisyControl_AI.Common.HttpRequest
 
         public async Task<DaisyControlAddUserResponseDto> AddUserAsync(ulong userId, string userName)
         {
-            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/main/users";
+            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/users";
 
             DaisyControlAddUserRequestDto requestDto = new()
             {
@@ -65,7 +65,7 @@ namespace DaisyControl_AI.Common.HttpRequest
                 return false;
             }
 
-            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/main/users/{user.Id}";
+            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/users/{user.Id}";
 
             var httpContent = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
             var serializedResponse = await CustomHttpClient.TryPutAsync(url, httpContent).ConfigureAwait(false);
@@ -83,6 +83,27 @@ namespace DaisyControl_AI.Common.HttpRequest
             {
                 LoggingManager.LogToFile("707b4170-d6c3-4cc0-9f58-41be5f88b3ee", $"Failed to deserialize response of type [{typeof(DaisyControlUserResponseDto)}] from url [{url}].");
                 return false;
+            }
+        }
+
+        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithMessagesToProcessAsync()
+        {
+            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/usersWithUnprocessedMessages?maxNbUsersToFetch=12";
+            var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(serializedResponse))
+            {
+                return null;
+            }
+
+            try
+            {
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersWithUnprocessedMessagesResponseDto>(serializedResponse);
+                return responseDto;
+            } catch (Exception e)
+            {
+                LoggingManager.LogToFile("4a730644-dc30-4072-a026-5aa5d6c658c3", $"Failed to deserialize response of type [{typeof(DaisyControlGetUserResponseDto)}] from url [{url}].");
+                return null;
             }
         }
     }

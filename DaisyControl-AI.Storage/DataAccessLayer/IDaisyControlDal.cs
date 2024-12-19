@@ -8,5 +8,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         Task<DaisyControlStorageUserDto> TryGetUserAsync(string userId);
         Task<DaisyControlAddUserRequestDto> TryAddUserAsync(DaisyControlAddUserRequestDto daisyControlAddUserDto);
         Task<DaisyControlUpdateUserRequestDto> TryUpdateUserAsync(DaisyControlUpdateUserRequestDto daisyControlUpdateUserDto);
+        Task<bool> TryDeleteUserAsync(string userId);
+        Task<DaisyControlStorageUserDto[]> TryGetUsersWithMessagesToProcessAsync(int limitRows = 10);
     }
 }
