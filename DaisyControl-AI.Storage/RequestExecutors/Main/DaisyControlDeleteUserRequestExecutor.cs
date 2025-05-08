@@ -1,7 +1,7 @@
 ﻿using DaisyControl_AI.Common.Exceptions.HTTP;
 using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests;
+using DaisyControl_AI.Storage.Dtos.Requests.Users;
 
 namespace DaisyControl_AI.Storage.RequestExecutors.Main
 {

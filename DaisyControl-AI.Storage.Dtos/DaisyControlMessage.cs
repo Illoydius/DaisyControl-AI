@@ -12,8 +12,8 @@ namespace DaisyControl_AI.Storage.Dtos
         [JsonPropertyName("messageContent")]
         public string MessageContent { get; set; }
 
-        [JsonPropertyName("messageStatus")]
-        public MessageStatus MessageStatus { get; set; }
+        //[JsonPropertyName("messageStatus")]
+        //public MessageStatus MessageStatus { get; set; }
 
         [JsonPropertyName("messageSource")]
         public MessageSource MessageSource { get; set; }

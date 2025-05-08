@@ -4,12 +4,17 @@ using Microsoft.Extensions.Hosting;
 
 namespace DaisyControl_AI.Core.Comms.Discord
 {
+    /// <summary>
+    /// Background worker on Discord interactions.
+    /// Handles AI communications From/To discord.
+    /// TODO: handle files(pictures, txt, etc).
+    /// </summary>
     public class DiscordWorker : BackgroundService
     {
-        IDaisyControlDiscordClient discordClient;
+        private readonly IDaisyControlDiscordClient discordClient;
 
         public DiscordWorker(
-            IDaisyControlDiscordClient discordClient)
+            IDaisyControlDiscordClient discordClient)// The discordClient Ctor will auto subscribe on new messages
         {
             this.discordClient = discordClient;
         }
@@ -29,16 +34,16 @@ namespace DaisyControl_AI.Core.Comms.Discord
             {
                 try
                 {
-                    if (discordClient != null && discordClient.IsReady)
+                    if (discordClient != null && discordClient.IsConnected)
                     {
                         BackgroundWork();
                     }
                 } catch (Exception exception)
                 {
                     LoggingManager.LogToFile("8708b99a-0030-419f-9f82-d65c185be004", $"Unhandled exception in discord bot worker main loop.", exception);
-                    // TODO: log here
                 }
 
+                // TODO: don't wait if we don't need to
                 await Task.Delay(1000);
             }
         }

@@ -8,7 +8,7 @@ using DaisyControl_AI.Common.Configuration;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.Exceptions;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests;
+using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Storage;
 
 namespace DaisyControl_AI.Storage.DataAccessLayer

@@ -1,8 +1,11 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
+using DaisyControl_AI.Common;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
 using DaisyControl_AI.Core.DaisyMind;
-using DaisyControl_AI.Storage.Dtos.Response;
+using DaisyControl_AI.Storage.Dtos.Requests.Messages;
+using DaisyControl_AI.Storage.Dtos.Response.Users;
 using Discord;
 using Discord.WebSocket;
 using static DaisyControl_AI.Core.Comms.Discord.DaisyControlDiscordClient;
@@ -11,6 +14,8 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 {
     public class DiscordBotUserMessageHandler : IDiscordBotUserMessageHandler
     {
+        string messagesUrl = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/messages";
+
         public async Task HandleNewClientMessageAsync(SocketUserMessage socketUserMessage, ReplyToUserCallback replyToUserCallback, SendChannelMessageCallback sendChannelMessageCallback)
         {
             if (socketUserMessage?.Author == null)
@@ -20,6 +25,27 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             }
 
             LoggingManager.LogToFile("73d4fa09-9410-4408-93e8-921570260372", $"Discord bot received a new message: [{socketUserMessage}] from [{socketUserMessage.Author.Username}({socketUserMessage.Author.Id})].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+
+            // Add the new message to the storage so async workers can work on it
+           
+
+            if (!await AddMessageToBuffer( new DaisyControlAddMessageToBufferRequestDto()
+            {
+                Status = Storage.Dtos.MessageStatus.Pending,
+                UserId = socketUserMessage.Author.Id.ToString(),
+                Message = new Storage.Dtos.DaisyControlMessage
+                {
+                    ReferentialType = Storage.Dtos.MessageReferentialType.User,
+                    MessageContent = socketUserMessage.ToString(),
+                    //MessageStatus = Storage.Dtos.MessageStatus.Pending,
+                    MessageSource = Storage.Dtos.MessageSource.Discord,
+                }
+            }).ConfigureAwait(false))
+            {
+                LoggingManager.LogToFile("75a973b3-255d-48c6-b4ac-7a277c294612", "Couldn't queue message to storage.");
+            }
+
+            return;
 
             // Execute message handling
             // Here, we have a few main options. If it's a new user, we'll go to the Onboarding Action, which will make the AI talk to the new user and eventually ask the user to register (create a new User in Storage)
@@ -43,7 +69,7 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             {
                 ReferentialType = Storage.Dtos.MessageReferentialType.User,
                 MessageContent = socketUserMessage.ToString(),
-                MessageStatus = Storage.Dtos.MessageStatus.ToProcess,
+                //MessageStatus = Storage.Dtos.MessageStatus.ToProcess,
                 MessageSource = Storage.Dtos.MessageSource.Discord,
             };
 
@@ -105,12 +131,6 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 
 
 
-
-
-
-
-
-
             //if (daisyMind.DaisyMemory.User?.CharacterSheet?.FirstName == null)
             //{
             //    // New user, go to onboarding handling
@@ -122,6 +142,31 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 
             //    // TODO
             //}
+        }
+
+        private async Task<bool> AddMessageToBuffer(DaisyControlAddMessageToBufferRequestDto daisyControlAddMessageToBufferRequestDto)
+        {
+            var httpContent = new StringContent(JsonSerializer.Serialize(daisyControlAddMessageToBufferRequestDto), Encoding.UTF8, "application/json");
+            var serializedResponse = await CustomHttpClient.TryPostAsync(messagesUrl, httpContent).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(serializedResponse))
+            {
+                return false;
+            }
+
+            try
+            {
+                var responseDto = JsonSerializer.Deserialize<DaisyControlAddUserResponseDto>(serializedResponse);
+
+                // TODO: validate responseDto
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                LoggingManager.LogToFile("5d38c1c0-7832-498d-a587-6722a4e6d2a9", $"Failed to deserialize response of type [{typeof(DaisyControlAddUserResponseDto)}] from adding new message to storage.");
+                return false;
+            }
         }
 
         public async Task HandleUpdatedMessageAsync(Cacheable<IMessage, ulong> cahedMessages, IMessage previousMessage, SocketMessage updatedMessage, ISocketMessageChannel channel)

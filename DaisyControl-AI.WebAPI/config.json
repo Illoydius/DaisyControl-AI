@@ -3,9 +3,8 @@
   "DiscordBotConfiguration": {
     "Enabled": true, // Enable the Discord Bot feature to be able to communicate to user(s) using discord
     "SecretToken": "SET_YOUR_BOT_TOKEN_HERE", // SET_YOUR_BOT_TOKEN_HERE
-    "System": {
+    "SystemLogs": {
       "Enabled": true // Enable the Discord Bot SYSTEM feature. The user(s) will be notified with [SYSTEM] messages as feedback
-
     }
   },
   "InferenceServerConfiguration": {

@@ -1,6 +1,4 @@
 ﻿using DaisyControl_AI.Common.Diagnostics;
-using DaisyControl_AI.Common.HttpRequest;
-using DaisyControl_AI.Storage.DataAccessLayer;
 using Microsoft.Extensions.Hosting;
 
 namespace DaisyControl_AI.Core.Core
@@ -8,12 +6,12 @@ namespace DaisyControl_AI.Core.Core
     public class AIWorker : BackgroundService
     {
         /// <summary>
-        /// Worker main operative loop.
+        /// AI main operative loop.
+        /// That's the main 'brain' algorithm where we decide what the AI will focus on next.
+        /// We'll then let the AI interact, using its creativity by itself, but we'll steer it before hand.
         /// </summary>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            //var config = CommonConfigurationManager.ReloadConfig();
-
             while (true)
             {
                 try
@@ -28,24 +26,25 @@ namespace DaisyControl_AI.Core.Core
                     // TODO: log here
                 }
 
+                // TODO: don't wait if we don't need to
                 await Task.Delay(1000);
             }
         }
 
         private async Task HandleNewMessagesFromUsersAsync()
         {
-            var HttpRequestClient = new DaisyControlStorageClient();
-            var usersToProcess = await HttpRequestClient.TryGetUsersWithMessagesToProcessAsync();
+            //var HttpRequestClient = new DaisyControlStorageClient();
+            //var usersToProcess = await HttpRequestClient.TryGetUsersWithMessagesToProcessAsync();
 
-            if (usersToProcess?.Users == null || !usersToProcess.Users.Any())
-            {
-                return;
-            }
+            //if (usersToProcess?.Users == null || !usersToProcess.Users.Any())
+            //{
+            //    return;
+            //}
 
-            foreach (var user in usersToProcess.Users)
-            {
-                // TODO: process each message, generate the according reply, if required, and send it
-            }
+            //foreach (var user in usersToProcess.Users)
+            //{
+            //    // TODO: process each message, generate the according reply, if required, and send it
+            //}
         }
     }
 }

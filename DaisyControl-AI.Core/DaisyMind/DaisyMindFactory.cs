@@ -1,5 +1,5 @@
 ﻿using DaisyControl_AI.Common.Diagnostics;
-using DaisyControl_AI.Storage.Dtos.Response;
+using DaisyControl_AI.Storage.Dtos.Response.Users;
 
 namespace DaisyControl_AI.Core.DaisyMind
 {

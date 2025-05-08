@@ -15,6 +15,6 @@
         /// <summary>
         /// Configuration related to the SYSTEM feature of the discord bot.
         /// </summary>
-        public DiscordBotSystemConfiguration System { get; set; }
+        public DiscordBotSystemConfiguration SystemLogs { get; set; }
     }
 }

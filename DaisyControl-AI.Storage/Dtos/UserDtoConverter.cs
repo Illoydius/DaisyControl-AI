@@ -1,4 +1,4 @@
-﻿using DaisyControl_AI.Storage.Dtos.Response;
+﻿using DaisyControl_AI.Storage.Dtos.Response.Users;
 using DaisyControl_AI.Storage.Dtos.Storage;
 
 namespace DaisyControl_AI.Storage.Dtos

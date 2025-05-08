@@ -5,8 +5,9 @@ namespace DaisyControl_AI.Storage.Dtos
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum MessageStatus
     {
-        Unknown = 0,
-        ToProcess = 1,
+        Pending = 0,
+        InProcess = 1,
         Processed = 2,
+        Error = 3,
     }
 }

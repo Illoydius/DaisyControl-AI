@@ -1,4 +1,4 @@
-﻿using DaisyControl_AI.Storage.Dtos.Requests;
+﻿using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Storage;
 
 namespace DaisyControl_AI.Storage.DataAccessLayer

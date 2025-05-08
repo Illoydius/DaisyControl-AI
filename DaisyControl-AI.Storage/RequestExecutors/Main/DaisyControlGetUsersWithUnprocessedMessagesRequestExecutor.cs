@@ -1,6 +1,6 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests;
+using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Response;
 
 namespace DaisyControl_AI.Storage.RequestExecutors.Main
@@ -21,20 +21,21 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
 
         public async Task<bool> ExecuteAsync()
         {
-            // Get chunk of users from storage that have unprocessed messages
-            var usersToProcess = await daisyControlDal.TryGetUsersWithMessagesToProcessAsync(daisyControlGetUserDto.MaxNbUsersToFetch);
+            return false;// TODO
+            //// Get chunk of users from storage that have unprocessed messages
+            //var usersToProcess = await daisyControlDal.TryGetUsersWithMessagesToProcessAsync(daisyControlGetUserDto.MaxNbUsersToFetch);
 
-            if (usersToProcess == null)
-            {
-                return true;
-            }
+            //if (usersToProcess == null)
+            //{
+            //    return true;
+            //}
 
-            response = new DaisyControlGetUsersWithUnprocessedMessagesResponseDto
-            {
-                Users = usersToProcess.Select(UserDtoConverter.ConvertStorageUserToGetResponseDto).ToArray(),
-            };
+            //response = new DaisyControlGetUsersWithUnprocessedMessagesResponseDto
+            //{
+            //    Users = usersToProcess.Select(UserDtoConverter.ConvertStorageUserToGetResponseDto).ToArray(),
+            //};
 
-            return true;
+            //return true;
         }
 
         public async Task<object> GetResponseAsync() => await Task.FromResult(response);
