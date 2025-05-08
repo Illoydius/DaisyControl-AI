@@ -4,7 +4,10 @@ namespace DaisyControl_AI.Common.Configuration.Storage
 {
     public class StorageConfiguration
     {
-        [JsonPropertyName("usersWithMessagesToProcessIndexName")]
-        public string UsersWithMessagesToProcessIndexName { get; set; }
+        //[JsonPropertyName("usersWithMessagesToProcessIndexName")]
+        //public string UsersWithMessagesToProcessIndexName { get; set; }
+
+        [JsonPropertyName("pendingMessagesToProcessIndexName")]
+        public string PendingMessagesToProcessIndexName { get; set; }
     }
 }

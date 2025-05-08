@@ -1,4 +1,6 @@
 ﻿using DaisyControl_AI.Storage.Dtos.Requests.Messages;
+using DaisyControl_AI.Storage.Dtos.Requests.MessagesBuffer;
+using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Workflows;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,31 +17,47 @@ namespace DaisyControl_AI.Storage.Controllers
             this.workflow = workflow;
         }
 
-        ///// <summary>
-        ///// Get new User from storage.
-        ///// </summary>
-        //[HttpGet]
-        //[Route("users/{userId}")]
-        //public async Task<ActionResult<object>> GetUser(DaisyControlGetUserRequestDto userRequest)
-        //{
-        //    object response = await workflow.ExecuteAsync(userRequest);
+        /// <summary>
+        /// Get a pending request from storage.
+        /// </summary>
+        [HttpGet]
+        [Route("reserve")]
+        public async Task<ActionResult<object>> GetPendingRequestFromBuffer(DaisyControlGetPendingMessagesRequestDto getPendingMessagesFromBufferRequestDto)
+        {
+            object response = await workflow.ExecuteAsync(getPendingMessagesFromBufferRequestDto);
 
-        //    if (response == null)
-        //    {
-        //        return NotFound();
-        //    }
+            if (response == null)
+            {
+                return NotFound();
+            }
 
-        //    return response;
-        //}
+            return response;
+        }
 
         /// <summary>
-        /// Add new User to storage.
+        /// get message request from storage.
+        /// </summary>
+        [HttpGet]
+        [Route("{messageId}")]
+        public async Task<ActionResult<object>> GetMessage(DaisyControlGetMessageFromBufferRequestDto getMessageFromBufferRequestDto)
+        {
+            object response = await workflow.ExecuteAsync(getMessageFromBufferRequestDto);
+
+            if (response == null)
+            {
+                return NotFound();
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// Add new message request to storage.
         /// </summary>
         [HttpPost]
-        [Route("messages")]
-        public async Task<ActionResult<object>> AddMessage([FromBody] DaisyControlAddMessageToBufferRequestDto userRequest)
+        public async Task<ActionResult<object>> AddMessage([FromBody] DaisyControlAddMessageToBufferRequestDto addMessageToBufferRequestDto)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
+            object response = await workflow.ExecuteAsync(addMessageToBufferRequestDto);
             return response;
         }
 

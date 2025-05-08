@@ -31,7 +31,6 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 
             if (!await AddMessageToBuffer( new DaisyControlAddMessageToBufferRequestDto()
             {
-                Status = Storage.Dtos.MessageStatus.Pending,
                 UserId = socketUserMessage.Author.Id.ToString(),
                 Message = new Storage.Dtos.DaisyControlMessage
                 {

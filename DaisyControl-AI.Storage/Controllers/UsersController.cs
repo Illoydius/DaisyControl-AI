@@ -1,5 +1,5 @@
 ﻿using DaisyControl_AI.Common.Exceptions.HTTP;
-using DaisyControl_AI.Storage.Dtos.Requests;
+using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Workflows;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,15 +7,16 @@ namespace DaisyControl_AI.Storage.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class StorageController : Controller
+    public class UsersController : Controller
     {
         private IWorkflow workflow;
 
-        public StorageController(IWorkflow workflow)
+        public UsersController(IWorkflow workflow)
         {
             this.workflow = workflow;
         }
 
+        // TEMP
         /// <summary>
         /// Just a ping-like endpoint.
         /// </summary>
@@ -30,7 +31,7 @@ namespace DaisyControl_AI.Storage.Controllers
         /// Get new User from storage.
         /// </summary>
         [HttpGet]
-        [Route("users/{userId}")]
+        [Route("{userId}")]
         public async Task<ActionResult<object>> GetUser(DaisyControlGetUserRequestDto userRequest)
         {
             object response = await workflow.ExecuteAsync(userRequest);
@@ -47,7 +48,6 @@ namespace DaisyControl_AI.Storage.Controllers
         /// Add new User to storage.
         /// </summary>
         [HttpPost]
-        [Route("users")]
         public async Task<ActionResult<object>> AddUser([FromBody] DaisyControlAddUserRequestDto userRequest)
         {
             object response = await workflow.ExecuteAsync(userRequest);
@@ -58,7 +58,7 @@ namespace DaisyControl_AI.Storage.Controllers
         /// Update (full obj) User to storage.
         /// </summary>
         [HttpPut]
-        [Route("users/{userIdToUpdate}")]
+        [Route("{userIdToUpdate}")]
         public async Task<ActionResult<object>> UpdateUser([FromRoute]string UserIdToUpdate, DaisyControlUpdateUserRequestDto userRequest)
         {
             // Validate request
@@ -75,29 +75,29 @@ namespace DaisyControl_AI.Storage.Controllers
         /// Delete User from storage.
         /// </summary>
         [HttpDelete]
-        [Route("users/{userId}")]
+        [Route("{userId}")]
         public async Task<ActionResult<object>> DeleteUser(DaisyControlDeleteUserRequestDto userRequest)
         {
             object response = await workflow.ExecuteAsync(userRequest);
             return response;
         }
 
-        //
-        /// <summary>
-        /// Get a chunk of users with unprocessed messages.
-        /// </summary>
-        [HttpGet]
-        [Route("usersWithUnprocessedMessages")]
-        public async Task<ActionResult<object>> UsersWithUnprocessedMessages(DaisyControlGetUsersWithUnprocessedMessagesRequestDto userRequest)
-        {
-            object response = await workflow.ExecuteAsync(userRequest);
+        ////
+        ///// <summary>
+        ///// Get a chunk of users with unprocessed messages.
+        ///// </summary>
+        //[HttpGet]
+        //[Route("unprocessedMessages")]
+        //public async Task<ActionResult<object>> UsersWithUnprocessedMessages(DaisyControlGetUsersWithUnprocessedMessagesRequestDto userRequest)
+        //{
+        //    object response = await workflow.ExecuteAsync(userRequest);
 
-            if (response == null)
-            {
-                return NotFound();
-            }
+        //    if (response == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return response;
-        }
+        //    return response;
+        //}
     }
 }

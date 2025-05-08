@@ -2,7 +2,7 @@
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 
-namespace DaisyControl_AI.Storage.RequestExecutors.Main
+namespace DaisyControl_AI.Storage.RequestExecutors.Main.Users
 {
     public class DaisyControlGetUserRequestExecutor : IMainRequestExecutor
     {
@@ -29,7 +29,7 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
             // Get User from storage to check if it already exists
             var user = await daisyControlDal.TryGetUserAsync(daisyControlGetUserDto.UserId);
 
-            response = UserDtoConverter.ConvertStorageUserToGetResponseDto(user);
+            response = user;//UserDtoConverter.ConvertStorageUserToGetResponseDto(user);
             return true;
         }
 
