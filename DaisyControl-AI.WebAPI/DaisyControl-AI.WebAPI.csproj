@@ -16,4 +16,8 @@
     <ProjectReference Include="..\DaisyControl-AI.Core\DaisyControl-AI.Core.csproj" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy /Y &quot;$(TargetDir)config.json&quot; &quot;$(SolutionDir)DaisyControl-AI.Storage\config.json&quot;" />
+  </Target>
+
 </Project>

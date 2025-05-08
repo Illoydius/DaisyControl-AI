@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "All in One",
+    "Projects": [
+      {
+        "Path": "DaisyControl-AI.WebAPI\\DaisyControl-AI.WebAPI.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "DaisyControl-AI.Storage\\DaisyControl-AI.Storage.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

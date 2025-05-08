@@ -3,6 +3,7 @@ services:
    command: "-jar DynamoDBLocal.jar -port 8822 -sharedDb -dbPath ./data"
    image: "amazon/dynamodb-local:latest"
    container_name: dynamodb-local
+   user: root # Required to run on certain envs where host permissions are more restricted
    ports:
      - "8822:8822"
    volumes:
