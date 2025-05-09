@@ -206,16 +206,19 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             daisyControlUpdateUserDto.Revision++;
 
             // If we have a pending message, set the User status to Pending
-            if (daisyControlUpdateUserDto.Status != UserStatus.AIMessagePending && daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.Assistant && a.MessageStatus == MessageStatus.Pending))
+            if (daisyControlUpdateUserDto.Status != UserStatus.Working)
             {
-                daisyControlUpdateUserDto.Status = UserStatus.AIMessagePending;
-            } else if (daisyControlUpdateUserDto.Status != UserStatus.UserMessagePending && daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.User && a.MessageStatus == MessageStatus.Pending))
-            {
-                daisyControlUpdateUserDto.Status = UserStatus.UserMessagePending;
-            } else if (daisyControlUpdateUserDto.Status == UserStatus.AIMessagePending && !daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.Assistant && a.MessageStatus == MessageStatus.Pending) ||
-                       daisyControlUpdateUserDto.Status == UserStatus.UserMessagePending && !daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.User && a.MessageStatus == MessageStatus.Pending))
-            {
-                daisyControlUpdateUserDto.Status = UserStatus.Ready;
+                if (daisyControlUpdateUserDto.Status != UserStatus.AIMessagePending && daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.Assistant && a.MessageStatus == MessageStatus.Pending))
+                {
+                    daisyControlUpdateUserDto.Status = UserStatus.AIMessagePending;
+                } else if (daisyControlUpdateUserDto.Status != UserStatus.UserMessagePending && daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.User && a.MessageStatus == MessageStatus.Pending))
+                {
+                    daisyControlUpdateUserDto.Status = UserStatus.UserMessagePending;
+                } else if (daisyControlUpdateUserDto.Status == UserStatus.AIMessagePending && !daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.Assistant && a.MessageStatus == MessageStatus.Pending) ||
+                           daisyControlUpdateUserDto.Status == UserStatus.UserMessagePending && !daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.User && a.MessageStatus == MessageStatus.Pending))
+                {
+                    daisyControlUpdateUserDto.Status = UserStatus.Ready;
+                }
             }
 
             try
@@ -412,6 +415,72 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             {
                 // wrap exception
                 throw new CommonException("49e068e8-920c-4861-9e95-0f975146f530", $"Unhandled exception when querying database to fetch users with pending AI messages. Exception message [{ex.Message}].", ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<DaisyControlGetUsersOfStatusWorkingResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows)
+        {
+            var config = CommonConfigurationManager.ReloadConfig();
+
+            try
+            {
+                var queryResponse = await dynamoDBClient.QueryAsync(new QueryRequest
+                {
+                    TableName = userTableName,
+                    Limit = limitRows,
+                    ConsistentRead = false,
+                    IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
+                    KeyConditionExpression = "#status = :status AND #nextOperationAvailabilityAtUtc < :nextOperationAvailabilityAtUtc",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        {
+                            "#status", "status"
+                        },
+                        {
+                            "#nextOperationAvailabilityAtUtc", "nextOperationAvailabilityAtUtc"
+                        },
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        {
+                            ":status", new AttributeValue { S = UserStatus.Working.ToString() }
+                        },
+                        {
+                            ":nextOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.AddYears(10).ToUnixTime().ToString() }
+                        },
+                    },
+                }).ConfigureAwait(false);
+
+                if (queryResponse.Items.Count <= 0)
+                {
+                    return null; // no Items found
+                }
+
+                List<DaisyControlGetUserResponseDto> UsersCollection = new();
+
+                foreach (Dictionary<string, AttributeValue> itemFromDatabase in queryResponse.Items)
+                {
+                    var responseDocument = Document.FromAttributeMap(itemFromDatabase);
+                    var jsonResponse = responseDocument.ToJson();
+                    var user = JsonSerializer.Deserialize<DaisyControlGetUserResponseDto>(jsonResponse);
+                    UsersCollection.Add(user);
+                }
+
+                return new DaisyControlGetUsersOfStatusWorkingResponseDto
+                {
+                    Users = UsersCollection.ToArray(),
+                };
+
+            } catch (ProvisionedThroughputExceededException)
+            {
+                await Task.Delay(NbMsToDelayAfterProvisionException);
+
+                throw;
+            } catch (Exception ex)
+            {
+                // wrap exception
+                throw new CommonException("cbb7ec69-a9a5-4079-b798-a37c31512aa1", $"Unhandled exception when querying database to fetch users with working status. Exception message [{ex.Message}].", ex);
             }
         }
     }

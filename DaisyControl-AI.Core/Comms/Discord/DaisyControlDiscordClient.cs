@@ -194,7 +194,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
 
             if (channel == null)
             {
-                LoggingManager.LogToFile("c6b25136-57bb-40c0-b997-f8bf7c16c2a6", $"Couldn't send message [{message}] from bot to user [{userId}] in DM channelId [{dmChannelId}]. User couldn't be found.");
+                LoggingManager.LogToFile("c6b25136-57bb-40c0-b997-f8bf7c16c2a6", $"Couldn't send message [{message}] from bot to user [{userId}] in DM channelId [{dmChannelId}]. Channel couldn't be found.");
                 return false;
             }
 
@@ -202,6 +202,21 @@ namespace DaisyControl_AI.Core.Comms.Discord
             var response = await channel.SendMessageAsync(message);
 
             return response != null;
+        }
+
+        public async Task<bool> ShowTypingAsync(ulong dmChannelId, ulong userId)
+        {
+            var channel = await discordSocketClient.GetDMChannelAsync(dmChannelId);
+
+            if (channel == null)
+            {
+                LoggingManager.LogToFile("dffb900e-d011-465e-8148-05e8e83dc691", $"Couldn't show AI typing in DM channelId [{dmChannelId}]. Channel couldn't be found.");
+                return false;
+            }
+
+            // Last for 10 sec
+            await channel.TriggerTypingAsync();
+            return true;
         }
 
         public async Task<bool> ReplyWithMessageAsync(ChannelType? channelType, ulong channelId, ulong userId, DaisyControlMessageType messageType, string message)

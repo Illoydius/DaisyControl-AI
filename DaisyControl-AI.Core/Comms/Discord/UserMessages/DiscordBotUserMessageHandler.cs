@@ -60,7 +60,7 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             {
                 CreatedAtUtc = DateTime.UtcNow,
                 ReferentialType = MessageReferentialType.User,
-                MessageContent = socketUserMessage.ToString(),
+                MessageContent = $"{socketUserMessage.ToString()}",
                 MessageStatus = MessageStatus.Pending,
                 SourceInfo = new()
                 {
@@ -73,6 +73,7 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             // Response was correctly received from user. Save the user message to storage
             daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
             daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(userMessage);
+            daisyMind.DaisyMemory.User.Global.NextOperationAvailabilityAtUtc = DateTime.UtcNow;
 
             bool storageUpdateSuccess = await httpRequestClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
 

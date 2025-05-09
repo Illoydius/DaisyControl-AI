@@ -12,5 +12,6 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         Task<bool> TryDeleteUserAsync(string userId);
         Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithUserMessagesToProcessAsync(int limitRows);
         Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows);
+        Task<DaisyControlGetUsersOfStatusWorkingResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows);
     }
 }

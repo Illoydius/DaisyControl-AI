@@ -131,5 +131,26 @@ namespace DaisyControl_AI.Common.HttpRequest
                 return null;
             }
         }
+
+        public async Task<DaisyControlGetUsersOfStatusWorkingResponseDto> GetWorkingStatusUsersAsync(int limitNbUsersToFetch = 3)
+        {
+            string url = $"{usersUrl}/working?maxNbUsersToFetch={limitNbUsersToFetch}";
+            var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(serializedResponse))
+            {
+                return null;
+            }
+
+            try
+            {
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersOfStatusWorkingResponseDto>(serializedResponse);
+                return responseDto;
+            } catch (Exception e)
+            {
+                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersOfStatusWorkingResponseDto)}] from url [{url}].");
+                return null;
+            }
+        }
     }
 }

@@ -2,6 +2,7 @@
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
 using DaisyControl_AI.Storage.Dtos;
+using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 using Microsoft.Extensions.Hosting;
 
@@ -66,6 +67,15 @@ namespace DaisyControl_AI.Core.Comms.Discord
         private async Task BackgroundWork()
         {
             // Check if there's messages to send
+            await HandleMessagesToSend();
+
+            // Check if there are inference being worked on that is a reply to a Discord user
+            await HandleMessagesToShowTyping();
+        }
+        
+
+        private async Task HandleMessagesToSend()
+        {
             DaisyControlGetUsersWithUnprocessedMessagesResponseDto result = await usersHttpClient.GetUsersWithAIPendingMessagesAsync(1);
 
             if (result == null || !result.Users.Any())
@@ -73,7 +83,10 @@ namespace DaisyControl_AI.Core.Comms.Discord
                 return;
             }
 
-            DaisyControlMessage messageToSend = result.Users[0].MessagesHistory.FirstOrDefault(f => f.SourceInfo.MessageSource == MessageSource.Discord && f.MessageStatus == MessageStatus.Pending && f.ReferentialType == MessageReferentialType.Assistant);
+
+            var validUsers = result.Users.Where(w=> w.MessagesHistory.Any(f => f.SourceInfo.MessageSource == MessageSource.Discord && f.MessageStatus == MessageStatus.Pending && f.ReferentialType == MessageReferentialType.Assistant));
+
+            DaisyControlMessage messageToSend = validUsers.FirstOrDefault()?.MessagesHistory.FirstOrDefault(f => f.SourceInfo.MessageSource == MessageSource.Discord && f.MessageStatus == MessageStatus.Pending && f.ReferentialType == MessageReferentialType.Assistant);
 
             if (messageToSend == null)
             {
@@ -111,6 +124,30 @@ namespace DaisyControl_AI.Core.Comms.Discord
                     break;
                 default:
                     break;
+            }
+        }
+
+        private async Task HandleMessagesToShowTyping()
+        {
+            DaisyControlGetUsersOfStatusWorkingResponseDto result = await usersHttpClient.GetWorkingStatusUsersAsync(100);
+
+            if (result == null || !result.Users.Any())
+            {
+                return;
+            }
+
+            var validUsers = result.Users.Where(w=>w.Status == UserStatus.Working && w.NextOperationAvailabilityAtUtc > DateTime.UtcNow && w.MessagesHistory.Any(a=> a.MessageStatus == MessageStatus.Pending && a.SourceInfo.MessageSourceType == MessageSourceType.DirectMessage && a.SourceInfo.MessageSource == MessageSource.Discord)).ToArray();
+
+            foreach (DaisyControlUserDto user in validUsers)
+            {
+                var message = user.MessagesHistory.FirstOrDefault(f=>f.SourceInfo.MessageSource == MessageSource.Discord && f.SourceInfo.MessageSourceType == MessageSourceType.DirectMessage && f.MessageStatus == MessageStatus.Pending);
+
+                if (message == null)
+                {
+                    continue;
+                }
+
+                await discordClient.ShowTypingAsync(ulong.Parse(message.SourceInfo.MessageSourceReferential), ulong.Parse(user.Id));
             }
         }
     }

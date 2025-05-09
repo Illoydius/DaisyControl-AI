@@ -20,8 +20,25 @@ namespace DaisyControl_AI.Core.Utils
                     return text;
                 }
 
+                string message = text.Replace(Environment.NewLine, string.Empty);
+                string tag = "<|im_start|>assistant";
+                int startPosition = message.ToLowerInvariant().IndexOf(tag);
+
+                if (startPosition >= 0)
+                {
+                    message = message.Substring(startPosition + tag.Length, message.Length - startPosition - tag.Length);
+
+                    string endTag = "<|im_end|>";
+                    int endPosition = message.ToLowerInvariant().IndexOf(endTag);
+
+                    if (endPosition >= 0)
+                    {
+                        message = message.Substring(0, endPosition);
+                    }
+                }
+
                 // Clean the response to remove certain tags
-                string responseText = text.Trim();
+                string responseText = message.Trim();
 
                 if (responseText.ToLowerInvariant().StartsWith("assistant"))
                 {

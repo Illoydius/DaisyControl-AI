@@ -60,10 +60,10 @@ namespace DaisyControl_AI.Storage.Controllers
         /// </summary>
         [HttpPut]
         [Route("{userIdToUpdate}")]
-        public async Task<ActionResult<object>> UpdateUser([FromRoute]string UserIdToUpdate, DaisyControlUpdateUserRequestDto userRequest)
+        public async Task<ActionResult<object>> UpdateUser([FromRoute] string UserIdToUpdate, DaisyControlUpdateUserRequestDto userRequest)
         {
             // Validate request
-            if(userRequest.Id != UserIdToUpdate)
+            if (userRequest.Id != UserIdToUpdate)
             {
                 throw new BadRequestWebApiException("d117c895-568d-4376-a785-466fcc8b6f7b", $"UserId [{UserIdToUpdate}] to update didn't match the provided body UserId [{userRequest.Id}].");
             }
@@ -100,6 +100,17 @@ namespace DaisyControl_AI.Storage.Controllers
         [HttpGet]
         [Route("unprocessedAIMessages")]
         public async Task<ActionResult<object>> UsersWithUnprocessedAIMessages(DaisyControlGetUsersWithUnprocessedAIMessagesRequestDto userRequest)
+        {
+            object response = await workflow.ExecuteAsync(userRequest);
+            return response;
+        }
+
+        /// <summary>
+        /// Get a chunk of users with 'working' status.
+        /// </summary>
+        [HttpGet]
+        [Route("working")]
+        public async Task<ActionResult<object>> UsersWithWorkingStatus(DaisyControlGetUsersWithWorkingStatusRequestDto userRequest)
         {
             object response = await workflow.ExecuteAsync(userRequest);
             return response;
