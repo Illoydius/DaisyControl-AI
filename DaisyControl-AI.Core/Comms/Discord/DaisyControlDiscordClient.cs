@@ -1,4 +1,5 @@
-﻿using DaisyControl_AI.Common.Configuration;
+﻿using System.Diagnostics;
+using DaisyControl_AI.Common.Configuration;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Core.Comms.Discord.Commands;
 using DaisyControl_AI.Core.Comms.Discord.UserMessages;
@@ -11,15 +12,20 @@ namespace DaisyControl_AI.Core.Comms.Discord
     /// <summary>
     /// Interact with Discord, send messages, receive messages, send/receive reactions, parse channels, etc.
     /// </summary>
+    /// TODO: discordSocketClient.SetGameAsync("At work"); or "taking a bath" etc :) 
     public class DaisyControlDiscordClient : IDaisyControlDiscordClient
     {
         // Private fields
         private DiscordSocketClient discordSocketClient = new DiscordSocketClient(new DiscordSocketConfig
         {
+            AlwaysDownloadUsers = true,
+            AlwaysDownloadDefaultStickers = true,
+            AlwaysResolveStickers = true,
             MessageCacheSize = 1024,
             ConnectionTimeout = 10000,
             HandlerTimeout = 5000,
             DefaultRetryMode = RetryMode.RetryTimeouts,
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.GuildPresences,
         });
 
         private bool isConnected = false;// To know when the websocket is bound
@@ -36,8 +42,6 @@ namespace DaisyControl_AI.Core.Comms.Discord
         // Delegates
         public delegate Task<bool> ReplyToUserCallback(ChannelType? channelType, ulong channelId, ulong userId, DaisyControlMessageType messageType, string message);
         ReplyToUserCallback replyToUserCallback;
-        public delegate Task<bool> SendChannelMessageCallback(ulong channelId, DaisyControlMessageType messageType, string message);
-        SendChannelMessageCallback sendChannelMessageCallback;
 
         // Starts and bind the bot to a socket shared with discord network, using configured auth
         public DaisyControlDiscordClient(
@@ -60,7 +64,6 @@ namespace DaisyControl_AI.Core.Comms.Discord
             }
 
             replyToUserCallback = ReplyWithMessageAsync;
-            sendChannelMessageCallback = SendMessageAsync;
 
             this.discordBotCommandHandler = discordBotCommandHandler;
             this.discordBotUserMessageHandler = discordBotUserMessageHandler;
@@ -68,21 +71,27 @@ namespace DaisyControl_AI.Core.Comms.Discord
             //discordSocketClient.LoggedIn += OnLoggedIn;
             //discordSocketClient.LoggedOut += OnLoggedOut;
             discordSocketClient.Log += LogDiscordClientEvent;
+            discordSocketClient.PresenceUpdated += DiscordPresenceUpdated;
             fDiscordBotCommandService.Log += LogDiscordCommandEvent;
             discordSocketClient.MessageReceived += MessageReceived;
             discordSocketClient.MessageUpdated += MessageUpdated;
             // TODO: MessageDeleted, ReactionAdded, ReactionRemoved, UserJoin, UserLeft, UserBanned, UserIsTyping, SlashCommandExecuted
             // TODO: handle  DiscordClientExtensions.GetDMChannelAsync(IDiscordClient, ulong) DiscordClientExtensions.GetDMChannelsAsync(IDiscordClient) 
 
-            discordSocketClient.Ready += () =>
+            discordSocketClient.Ready += async () =>
             {
                 isConnected = true;
+                await discordSocketClient.SetStatusAsync(UserStatus.Online);
                 LoggingManager.LogToFile("66a8d6b1-f8ee-4719-bd51-8db3973aaade", $"Discord bot is connected.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
-                return Task.CompletedTask;
             };
 
             // Bind discord to a specific socket, this will trigger the Ready event once the bot is connected
             BindDiscordBot().Wait();
+        }
+
+        private async Task DiscordPresenceUpdated(SocketUser socketUser, SocketPresence socketPresenceBefore, SocketPresence socketPresenceAfter)
+        {
+            LoggingManager.LogToFile("18928ed3-cbac-4939-9133-8f08581727ce", $"Discord bot presence updated from [{socketPresenceBefore.Status}] to [{socketPresenceAfter.Status}].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
         }
 
         /// <summary>
@@ -98,14 +107,34 @@ namespace DaisyControl_AI.Core.Comms.Discord
         private async Task BindDiscordBot()
         {
             await discordSocketClient.LoginAsync(TokenType.Bot, discordBotToken, validateToken: true);
-            if (discordSocketClient.ConnectionState == ConnectionState.Disconnecting ||
-                discordSocketClient.ConnectionState == ConnectionState.Disconnected)
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            while (discordSocketClient.LoginState != LoginState.LoggedIn && stopwatch.ElapsedMilliseconds < 15000)
             {
-                LoggingManager.LogToFile("6eeb2aeb-30b5-43f6-b1cd-c2314611bbb4", $"Couldn't connect the Discord Bot to Discord Network. The Discord bot will be disabled until DaisyControl-AI server is restarted. [{discordSocketClient}]");
+                await Task.Delay(500);
+            }
+
+            if (discordSocketClient.LoginState != LoginState.LoggedIn)
+            {
+                LoggingManager.LogToFile("bc31bb60-631a-4e46-bfc2-f10eba4eaf82", $"Couldn't login the Discord Bot to Discord Network. The Discord bot will be disabled until DaisyControl-AI server is restarted. LoginState = [{discordSocketClient.LoginState}]");
                 return;
             }
 
             await discordSocketClient.StartAsync();
+
+            stopwatch.Restart();
+            while (discordSocketClient.ConnectionState != ConnectionState.Connected && stopwatch.ElapsedMilliseconds < 15000)
+            {
+                await Task.Delay(500);
+            }
+
+            stopwatch.Stop();
+            if (discordSocketClient.ConnectionState == ConnectionState.Disconnecting ||
+                discordSocketClient.ConnectionState == ConnectionState.Disconnected)
+            {
+                LoggingManager.LogToFile("6eeb2aeb-30b5-43f6-b1cd-c2314611bbb4", $"Couldn't connect the Discord Bot to Discord Network. The Discord bot will be disabled until DaisyControl-AI server is restarted. ConnectionState = [{discordSocketClient.ConnectionState}]");
+                return;
+            }
         }
 
         private async Task MessageReceived(SocketMessage message)
@@ -124,15 +153,20 @@ namespace DaisyControl_AI.Core.Comms.Discord
             string messageValue = message.ToString();
             if (messageValue.Length > 1 && messageValue.First() == '!')
             {
-                await discordBotCommandHandler.HandleNewCommandMessageAsync(socketUserMessage, replyToUserCallback, sendChannelMessageCallback);
+                Task.Run(() => discordBotCommandHandler.HandleNewCommandMessageAsync(socketUserMessage, replyToUserCallback));
                 return;
             }
 
-            await discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage, replyToUserCallback, sendChannelMessageCallback);
+            Task.Run(() => discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage, replyToUserCallback));
         }
 
         private async Task MessageUpdated(Cacheable<IMessage, ulong> cahedMessages, SocketMessage updatedMessage, ISocketMessageChannel channel)
         {
+            if (updatedMessage.Author.IsBot)
+            {
+                return;
+            }
+
             // If the message was not in the cache, downloading it will result in getting a copy of `after`.
             var previousMessage = await cahedMessages.GetOrDownloadAsync();
 
@@ -207,8 +241,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             {
                 LoggingManager.LogToFile("dd585bfe-c09e-4c12-aca0-b3a9c3b1b0d7", $"{prefix}[Command_{discordLogMessage.Severity}] {cmdException.Command.Aliases.FirstOrDefault()} failed to execute in {cmdException.Context.Channel}.");
                 LoggingManager.LogToFile("a3bda5e8-69e4-4616-a61f-62350c2757db", cmdException.Message);
-            }
-            else
+            } else
             {
                 LoggingManager.LogToFile("9ea0b634-6a1a-4478-80af-c8efb1505cf5", $"{prefix}[General_{discordLogMessage.Severity}] {discordLogMessage}");
             }

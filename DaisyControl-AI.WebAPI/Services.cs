@@ -16,8 +16,14 @@ namespace DaisyControl_AI.WebAPI
         {
             // Workflows
             services.AddScoped<IWorkflow, MainWorkflow>();
+
+            // Main endpoints for communication to and from user
             services.AddSingleton<IDaisyControlDiscordClient, DaisyControlDiscordClient>();
+
+            // Handle user messages
             services.AddSingleton<IDiscordBotUserMessageHandler, DiscordBotUserMessageHandler>();
+
+            // Handle user commands
             services.AddSingleton<IDiscordBotCommandHandler, DiscordBotCommandHandler>();
 
             // Background services workers

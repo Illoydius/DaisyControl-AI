@@ -1,4 +1,4 @@
-﻿using DaisyControl_AI.Storage.Dtos.Requests.Messages;
+﻿using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Requests.MessagesBuffer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Workflows;
@@ -55,7 +55,7 @@ namespace DaisyControl_AI.Storage.Controllers
         /// Add new message request to storage.
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<object>> AddMessage([FromBody] DaisyControlAddMessageToBufferRequestDto addMessageToBufferRequestDto)
+        public async Task<ActionResult<object>> AddMessage([FromBody] DaisyControlAddMessageToBufferDto addMessageToBufferRequestDto)
         {
             object response = await workflow.ExecuteAsync(addMessageToBufferRequestDto);
             return response;

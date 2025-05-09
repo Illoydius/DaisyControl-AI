@@ -1,4 +1,4 @@
-﻿using DaisyControl_AI.Storage.Dtos.Requests.Messages;
+﻿using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Requests.MessagesBuffer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Response.Messages;
@@ -17,7 +17,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
 
         // Messages Buffer
         Task<DaisyControlGetMessageFromBufferResponseDto> TryGetMessageFromBufferAsync(string messageId);
-        Task<DaisyControlAddMessageToBufferRequestDto> TryAddMessageToBufferAsync(DaisyControlAddMessageToBufferRequestDto daisyControlAddMessageToBufferDto);
+        Task<DaisyControlAddMessageToBufferDto> TryAddMessageToBufferAsync(DaisyControlAddMessageToBufferDto daisyControlAddMessageToBufferDto);
         Task<DaisyControlMessageToBufferResponseDto[]> TryGetPendingMessagesFromBufferAsync(int limitRows = 5);
     }
 }

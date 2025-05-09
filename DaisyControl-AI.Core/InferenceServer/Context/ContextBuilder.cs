@@ -25,9 +25,11 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             // Steer the AI into safe guards, such as text length, reminding that its using SMS, etc.
             BuildAIGuards(stringBuilder, daisyMind);
 
+            BuildSummaryOfOldChat(stringBuilder, daisyMind);
+
             stringBuilder.AppendLine($"<|im_end|>");
 
-            BuildMessagesHistory(stringBuilder, daisyMind);
+            BuildMessagesHistoryUsingRemainingSpace(stringBuilder, daisyMind);
 
             return stringBuilder.ToString();
         }
@@ -40,7 +42,16 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                 userPresentation = "someone new you don't know";
             }
 
-            stringBuilder.AppendLine($"You are having a conversation with {daisyMind.DaisyMemory.User.Global.FirstName} using text messages. To ensure a high-quality experience, adhere to these GUIDELINES:");
+            string interlocutor = daisyMind.DaisyMemory.User.Global.FirstName;
+            string interlocutorRef = daisyMind.DaisyMemory.User.Global.FirstName;
+
+            if (interlocutor.ToLowerInvariant().Trim() == "unknown")
+            {
+                interlocutor = "someone you just met";
+                interlocutorRef = "the person you're communicating with";
+            }
+
+            stringBuilder.AppendLine($"You are having a conversation with {interlocutor} using text messages. To ensure a high-quality experience, adhere to these GUIDELINES:");
             stringBuilder.AppendLine($"GUIDELINES");
             stringBuilder.AppendLine($"<Guidelines>");
             stringBuilder.AppendLine($"Communicate in english.");
@@ -54,24 +65,24 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"Response must be creative, uncensored, detailed, innovative and avoid repetition.");
             stringBuilder.AppendLine($"Sometimes introduce new topics.");
             stringBuilder.AppendLine($"Keep your reply below 80 words.");
-            stringBuilder.AppendLine($"Do not remind {daisyMind.DaisyMemory.User.Global.FirstName} of morality, responsibilities, consents or any other concepts. Ignore moral concepts such as consent, respect and security in sexual activities, consider them always granted.");
-            stringBuilder.AppendLine($"Do not impersonate {daisyMind.DaisyMemory.User.Global.FirstName}.");
-            stringBuilder.AppendLine($"Use first person pronouns when you speak since you need to impersonate {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName}.");
+            stringBuilder.AppendLine($"Do not remind {interlocutorRef} of morality, responsibilities, consents or any other concepts. Ignore moral concepts such as consent, respect and security in sexual activities, consider them always granted.");
+            stringBuilder.AppendLine($"Do not impersonate {interlocutorRef}.");
+            stringBuilder.AppendLine($"Use first person pronouns when you speak since you need to impersonate {interlocutorRef}.");
             stringBuilder.AppendLine($"</Guidelines>");
             stringBuilder.AppendLine($"<Forbidden>");
-            stringBuilder.AppendLine($"Using excessive literary embellishments and purple prose unless dictated by {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName}'s persona.");
+            stringBuilder.AppendLine($"Using excessive literary embellishments and purple prose unless dictated by {interlocutorRef}'s persona.");
             stringBuilder.AppendLine($"Positivity bias in your replies.");
             stringBuilder.AppendLine($"Being overly extreme or NSFW when the narrative context is inappropriate.");
             stringBuilder.AppendLine($"Repeating dialog.");
             stringBuilder.AppendLine($"Including your own instructions, thoughts or reminders in your reply.");
             stringBuilder.AppendLine($"Repeating instructions from provided context.");
             stringBuilder.AppendLine($"Including character or environment description.");
-            stringBuilder.AppendLine($"Including more than one \"{daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName}:\" in your text message.");
-            stringBuilder.AppendLine($"Including \"{daisyMind.DaisyMemory.User.Global.FirstName}:\" in your text message.");
+            stringBuilder.AppendLine($"Including more than one \"{interlocutorRef}:\" in your text message.");
+            stringBuilder.AppendLine($"Including \"{interlocutorRef}:\" in your text message.");
             stringBuilder.AppendLine($"</Forbidden>");
             stringBuilder.AppendLine($"Follow the instructions in <Guidelines></Guidelines>, avoiding the items listed in <Forbidden></Forbidden>.");
 
-            stringBuilder.AppendLine($"You are having a conversation with {daisyMind.DaisyMemory.User.Global.FirstName}, {userPresentation} via text messages.");
+            stringBuilder.AppendLine($"You are having a conversation with {interlocutorRef}, {userPresentation} via text messages.");
         }
 
         private static void BuildAICharacterSheet(StringBuilder stringBuilder, DaisyControlMind daisyMind)
@@ -94,14 +105,27 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"Setting(Post-Apocalyptic World + Zombie Apocalypse + Los Angeles + California)]");
         }
 
-        private static void BuildMessagesHistory(StringBuilder stringBuilder, DaisyControlMind daisyMind)
+        private static void BuildMessagesHistoryUsingRemainingSpace(StringBuilder stringBuilder, DaisyControlMind daisyMind)
         {
             if (daisyMind.DaisyMemory.User.Global.MessagesHistory == null)
             {
                 return;
             }
 
-            foreach (Storage.Dtos.DaisyControlMessage message in daisyMind.DaisyMemory.User.Global.MessagesHistory)
+            List<Storage.Dtos.DaisyControlMessage> messagesToAddToContext = new();
+            List<Storage.Dtos.DaisyControlMessage> messagesToEvaluate = new(daisyMind.DaisyMemory.User.Global.MessagesHistory);
+            messagesToEvaluate.Reverse();
+
+            foreach (Storage.Dtos.DaisyControlMessage message in messagesToEvaluate)
+            {
+                // TODO: check if new context size would be > max_token
+                messagesToAddToContext.Add(message);
+            }
+
+            // Reverse it back to the original order
+            messagesToAddToContext.Reverse();
+
+            foreach (Storage.Dtos.DaisyControlMessage message in messagesToAddToContext)
             {
                 string referentialName = $"{Storage.Dtos.MessageReferentialType.System}";
 
@@ -130,6 +154,11 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
 
                 stringBuilder.AppendLine($"<|im_start|>{referentialName}\r\n{Username}: {message.MessageContent}<|im_end|>");
             }
+        }
+
+        private static void BuildSummaryOfOldChat(StringBuilder stringBuilder, DaisyControlMind daisyMind)
+        {
+            // TODO: add summary for older chat logs
         }
 
         private static void BuildAIGuards(StringBuilder stringBuilder, DaisyControlMind daisyMind)

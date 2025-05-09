@@ -1,6 +1,5 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests.Messages;
 using DaisyControl_AI.Storage.Dtos.Requests.MessagesBuffer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.RequestExecutors.Main.Messages;
@@ -28,7 +27,7 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
                 // MessagesBuffer
                 case DaisyControlGetMessageFromBufferRequestDto daisyControlGetMessageFromBufferRequestDto:
                     return new DaisyControlGetMessageFromBufferRequestExecutor(daisyControlDal, daisyControlGetMessageFromBufferRequestDto);
-                case DaisyControlAddMessageToBufferRequestDto daisyControlAddMessageToBufferDto:
+                case DaisyControlAddMessageToBufferDto daisyControlAddMessageToBufferDto:
                     return new DaisyControlAddMessageToBufferRequestExecutor(daisyControlDal, daisyControlAddMessageToBufferDto);
                 case DaisyControlGetPendingMessagesRequestDto daisyControlGetPendingMessagesRequestDto:
                     return new DaisyControlGetPendingMessagesFromBufferRequestExecutor(daisyControlDal, daisyControlGetPendingMessagesRequestDto);

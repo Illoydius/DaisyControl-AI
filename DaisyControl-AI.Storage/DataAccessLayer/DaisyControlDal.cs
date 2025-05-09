@@ -8,10 +8,8 @@ using DaisyControl_AI.Common.Configuration;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.Exceptions;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests.Messages;
 using DaisyControl_AI.Storage.Dtos.Requests.MessagesBuffer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
-using DaisyControl_AI.Storage.Dtos.Response;
 using DaisyControl_AI.Storage.Dtos.Response.Messages;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 
@@ -125,14 +123,12 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                             },
                         });
                     }
-                }
-                catch (OperationCanceledException e)
+                } catch (OperationCanceledException e)
                 {
                     string errMessage = $"The database was unreachable for [{NbMsUnreachableDbOnStartup}] ms on startup... aborting.";
                     LoggingManager.LogToFile("a904301c-2a87-4f6f-bb2d-a626aa3d2892", errMessage);
                     throw new CommonException("3fb7f9c1-0466-4f9c-bfab-48b69c75d7e4", errMessage, e);
-                }
-                finally
+                } finally
                 {
                     cancellationTokenSource.Dispose();
                 }
@@ -181,14 +177,12 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
 
                 return userDto;
 
-            }
-            catch (ProvisionedThroughputExceededException)
+            } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 // wrap exception
                 throw new CommonException("3a7d0b58-4c83-425a-8b88-32d33f708188", $"Unhandled exception when querying database. Failed to get User matching UserId [{userId}] from storage. Exception message [{ex.Message}].", ex);
@@ -222,18 +216,15 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 }).ConfigureAwait(false);
 
                 return daisyControlAddUserDto;
-            }
-            catch (ConditionalCheckFailedException)
+            } catch (ConditionalCheckFailedException)
             {
                 throw new CommonException("fb23d483-9131-45f8-90f4-3bd192bfe520", $"User was created by another instance. User [{daisyControlAddUserDto.Username}] won't be created to avoid duplicates.");
-            }
-            catch (ProvisionedThroughputExceededException)
+            } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 // wrap exception
                 throw new CommonException("008d82d9-4181-4466-be67-07533b912df0", $"Unhandled exception when querying database. Failed to add User of Name [{daisyControlAddUserDto.Username}] to storage. Exception message [{ex.Message}].", ex);
@@ -272,18 +263,15 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 }).ConfigureAwait(false);
 
                 return daisyControlUpdateUserDto;
-            }
-            catch (ConditionalCheckFailedException)
+            } catch (ConditionalCheckFailedException)
             {
                 throw new CommonException("e5f4ed44-3488-42a2-aa11-2a80405f73ca", $"Revision didn't match. User [{daisyControlUpdateUserDto.Username}] won't be updated.");
-            }
-            catch (ProvisionedThroughputExceededException)
+            } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 // wrap exception
                 throw new CommonException("bfc58783-5b54-4bd4-abcf-085b88f55e64", $"Unhandled exception when querying database. Failed to update User [{daisyControlUpdateUserDto.Id}] in storage. Exception message [{ex.Message}].", ex);
@@ -310,14 +298,12 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 }).ConfigureAwait(false);
 
                 return response.HttpStatusCode != HttpStatusCode.NoContent;
-            }
-            catch (ProvisionedThroughputExceededException)
+            } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 // wrap exception
                 throw new CommonException("bcd3fe41-f87d-4434-b693-b65390a20051", $"Unhandled exception when querying database. Failed to delete User matching UserId [{userId}] from storage. Exception message [{ex.Message}].", ex);
@@ -355,21 +341,19 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
 
                 return messageDto;
 
-            }
-            catch (ProvisionedThroughputExceededException)
+            } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 // wrap exception
                 throw new CommonException("33b227bc-c6f5-4b60-b179-f62fc09faf5b", $"Unhandled exception when querying database. Failed to get pending message matching messageId [{messageId}] from storage. Exception message [{ex.Message}].", ex);
             }
         }
 
-        public async Task<DaisyControlAddMessageToBufferRequestDto> TryAddMessageToBufferAsync(DaisyControlAddMessageToBufferRequestDto daisyControlAddMessageToBufferDto)
+        public async Task<DaisyControlAddMessageToBufferDto> TryAddMessageToBufferAsync(DaisyControlAddMessageToBufferDto daisyControlAddMessageToBufferDto)
         {
             if (daisyControlAddMessageToBufferDto == null)
             {
@@ -396,18 +380,15 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 }).ConfigureAwait(false);
 
                 return daisyControlAddMessageToBufferDto;
-            }
-            catch (ConditionalCheckFailedException)
+            } catch (ConditionalCheckFailedException)
             {
                 throw new CommonException("98f53fa4-4ce1-40ff-92bd-bc30b451be67", $"Message in MessagesBuffer was created by another instance. Message [{daisyControlAddMessageToBufferDto.Id}] won't be created to avoid duplicates.");
-            }
-            catch (ProvisionedThroughputExceededException)
+            } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 // wrap exception
                 throw new CommonException("a75d9a59-b1f2-4982-b97a-e656d07a0c07", $"Unhandled exception when querying database. Failed to add Message to MessagesBuffer of Id [{daisyControlAddMessageToBufferDto.Id}] to storage. Exception message [{ex.Message}].", ex);
@@ -458,14 +439,12 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 }
 
                 return MessagesCollection.ToArray();
-            }
-            catch (ProvisionedThroughputExceededException)
+            } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
 
                 throw;
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 // wrap exception
                 throw new CommonException("a82d2dbe-f49d-4888-bb4b-71a57818baf3", $"Unhandled exception when querying database to fetch users by unprocessed messages. Exception message [{ex.Message}].", ex);

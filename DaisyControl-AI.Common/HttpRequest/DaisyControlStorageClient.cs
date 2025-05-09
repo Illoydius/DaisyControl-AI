@@ -6,11 +6,13 @@ using DaisyControl_AI.Storage.Dtos.Response.Users;
 
 namespace DaisyControl_AI.Common.HttpRequest
 {
-    public class DaisyControlStorageClient
+    public class DaisyControlStorageUsersClient
     {
+        string usersUrl = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/users";
+
         public async Task<DaisyControlGetUserResponseDto> GetUserAsync(ulong userId)
         {
-            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/users/{userId}";
+            string url = $"{usersUrl}/{userId}";
             var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(serializedResponse))
@@ -31,8 +33,6 @@ namespace DaisyControl_AI.Common.HttpRequest
 
         public async Task<DaisyControlAddUserResponseDto> AddUserAsync(ulong userId, string userName)
         {
-            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/users";
-
             DaisyControlAddUserRequestDto requestDto = new()
             {
                 Id = userId.ToString(),
@@ -40,7 +40,7 @@ namespace DaisyControl_AI.Common.HttpRequest
             };
 
             var httpContent = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
-            var serializedResponse = await CustomHttpClient.TryPostAsync(url, httpContent).ConfigureAwait(false);
+            var serializedResponse = await CustomHttpClient.TryPostAsync(usersUrl, httpContent).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(serializedResponse))
             {
@@ -53,7 +53,7 @@ namespace DaisyControl_AI.Common.HttpRequest
                 return responseDto;
             } catch (Exception e)
             {
-                LoggingManager.LogToFile("ebd7781a-779b-45f0-9eff-fb085924ba71", $"Failed to deserialize response of type [{typeof(DaisyControlAddUserResponseDto)}] from url [{url}].");
+                LoggingManager.LogToFile("ebd7781a-779b-45f0-9eff-fb085924ba71", $"Failed to deserialize response of type [{typeof(DaisyControlAddUserResponseDto)}] from url [{usersUrl}].");
                 return null;
             }
         }
@@ -65,7 +65,7 @@ namespace DaisyControl_AI.Common.HttpRequest
                 return false;
             }
 
-            string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/storage/users/{user.Id}";
+            string url = $"{usersUrl}/{user.Id}";
 
             var httpContent = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
             var serializedResponse = await CustomHttpClient.TryPutAsync(url, httpContent).ConfigureAwait(false);
@@ -85,26 +85,5 @@ namespace DaisyControl_AI.Common.HttpRequest
                 return false;
             }
         }
-
-        //public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithMessagesToProcessAsync()
-        //{
-        //    string url = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/users/unprocessedMessages?maxNbUsersToFetch=12";
-        //    var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
-
-        //    if (string.IsNullOrWhiteSpace(serializedResponse))
-        //    {
-        //        return null;
-        //    }
-
-        //    try
-        //    {
-        //        var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersWithUnprocessedMessagesResponseDto>(serializedResponse);
-        //        return responseDto;
-        //    } catch (Exception e)
-        //    {
-        //        LoggingManager.LogToFile("4a730644-dc30-4072-a026-5aa5d6c658c3", $"Failed to deserialize response of type [{typeof(DaisyControlGetUserResponseDto)}] from url [{url}].");
-        //        return null;
-        //    }
-        //}
     }
 }

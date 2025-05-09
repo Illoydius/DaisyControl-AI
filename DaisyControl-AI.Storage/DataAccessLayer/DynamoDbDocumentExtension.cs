@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Amazon.DynamoDBv2.DocumentModel;
-using DaisyControl_AI.Storage.Dtos.Requests.Messages;
+using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 
 namespace DaisyControl_AI.Storage.DataAccessLayer
@@ -26,7 +26,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             string serializedValue = dataItem switch
             {
                 DaisyControlUserResponseDto daisyControlUserDto => JsonSerializer.Serialize(daisyControlUserDto, serializerOptions),
-                DaisyControlAddMessageToBufferRequestDto daisyControlMessageToBufferDto => JsonSerializer.Serialize(daisyControlMessageToBufferDto, serializerOptions),
+                DaisyControlAddMessageToBufferDto daisyControlMessageToBufferDto => JsonSerializer.Serialize(daisyControlMessageToBufferDto, serializerOptions),
                 _ => throw new Exception($"Type {dataItem.GetType()} is unhandled."),
             };
 

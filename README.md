@@ -53,6 +53,22 @@ In the future, DaisyControl-AI will be able to use various methods to communicat
 For a first version, a rough Discord integration should be enough to test the project and play
 around.
 
+# Installation
+You'll need an inference server. Just install KoboldCPP..
+
+## Koboldcpp
+Download the exe from releases
+
+https://github.com/LostRuins/koboldcpp
+
+You can follow their own documentation to setup it correctly. Be sure that 'http://localhost:5001/api' works.
+
+# Launch DaisyControl
+1- Start koboldCPP.
+2- Start the dockerfile to handle Storage.
+3- Start DaisyControl-Ai Storage WebApi.
+4- Start DaisyControl-Ai WebApi.
+
 # Solution structure
 A descriptif of the projects structure.
 
