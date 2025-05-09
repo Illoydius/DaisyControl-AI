@@ -1,8 +1,6 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests.MessagesBuffer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
-using DaisyControl_AI.Storage.RequestExecutors.Main.Messages;
 using DaisyControl_AI.Storage.RequestExecutors.Main.Users;
 
 namespace DaisyControl_AI.Storage.RequestExecutors.Main
@@ -22,15 +20,10 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
                     return new DaisyControlGetUserRequestExecutor(daisyControlDal, daisyControlGetUserDto);
                 case DaisyControlDeleteUserRequestDto daisyControlDeleteUserDto:
                     return new DaisyControlDeleteUserRequestExecutor(daisyControlDal, daisyControlDeleteUserDto);
-                //case DaisyControlGetUsersWithUnprocessedMessagesRequestDto daisyControlGetUsersWithUnprocessedMessagesRequestDto:
-                //    return new DaisyControlGetUsersWithUnprocessedMessagesRequestExecutor(daisyControlDal, daisyControlGetUsersWithUnprocessedMessagesRequestDto);
-                // MessagesBuffer
-                case DaisyControlGetMessageFromBufferRequestDto daisyControlGetMessageFromBufferRequestDto:
-                    return new DaisyControlGetMessageFromBufferRequestExecutor(daisyControlDal, daisyControlGetMessageFromBufferRequestDto);
-                case DaisyControlAddMessageToBufferDto daisyControlAddMessageToBufferDto:
-                    return new DaisyControlAddMessageToBufferRequestExecutor(daisyControlDal, daisyControlAddMessageToBufferDto);
-                case DaisyControlGetPendingMessagesRequestDto daisyControlGetPendingMessagesRequestDto:
-                    return new DaisyControlGetPendingMessagesFromBufferRequestExecutor(daisyControlDal, daisyControlGetPendingMessagesRequestDto);
+                case DaisyControlGetUsersWithUnprocessedUserMessagesRequestDto daisyControlGetUsersWithUnprocessedUserMessagesRequestDto:
+                    return new DaisyControlGetUsersWithUnprocessedUserMessagesRequestExecutor(daisyControlDal, daisyControlGetUsersWithUnprocessedUserMessagesRequestDto);
+                case DaisyControlGetUsersWithUnprocessedAIMessagesRequestDto daisyControlGetUsersWithUnprocessedAIMessagesRequestDto:
+                    return new DaisyControlGetUsersWithUnprocessedAIMessagesRequestExecutor(daisyControlDal, daisyControlGetUsersWithUnprocessedAIMessagesRequestDto);
                 default:
                     return null;// TODO : replace with unhandledExc
             }

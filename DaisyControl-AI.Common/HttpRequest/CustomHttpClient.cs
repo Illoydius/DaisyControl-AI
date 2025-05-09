@@ -71,5 +71,23 @@ namespace DaisyControl_AI.Common.HttpRequest
 
             return null;
         }
+
+        public static async Task<string> TryDeleteAsync(string url, StringContent httpContent)
+        {
+            // Call asynchronous network methods in a try/catch block to handle exceptions.
+            try
+            {
+                using HttpResponseMessage response = await httpClient.DeleteAsync(url);
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                return responseBody;
+            } catch (HttpRequestException e)
+            {
+                LoggingManager.LogToFile("82b4c654-1d31-4b19-a710-407d843f33ba", $"DELETE HttpRequest to url [{url}] failed.", e);
+            }
+
+            return null;
+        }
     }
 }

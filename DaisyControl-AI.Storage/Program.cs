@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using DaisyControl_AI.Storage;
+using DaisyControl_AI.Storage.Dtos.JsonConverters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,7 @@ builder.Services
 {
     option.JsonSerializerOptions.AllowTrailingCommas = true;
     option.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    option.JsonSerializerOptions.Converters.Add(new DateTimeUnixJsonConverter());
 });
 
 builder.Services.AddEndpointsApiExplorer();

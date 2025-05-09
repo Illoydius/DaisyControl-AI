@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Amazon.DynamoDBv2.DocumentModel;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Response.Users;
 
 namespace DaisyControl_AI.Storage.DataAccessLayer
 {
@@ -25,8 +24,8 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             // Note that serializing directly the dataItem using Json.Text doesn't serialize child properties, which was working with newtonsoft. The following code fix that behaviour.
             string serializedValue = dataItem switch
             {
-                DaisyControlUserResponseDto daisyControlUserDto => JsonSerializer.Serialize(daisyControlUserDto, serializerOptions),
-                DaisyControlAddMessageToBufferDto daisyControlMessageToBufferDto => JsonSerializer.Serialize(daisyControlMessageToBufferDto, serializerOptions),
+                DaisyControlUserDto daisyControlUserDto => JsonSerializer.Serialize(daisyControlUserDto, serializerOptions),
+                
                 _ => throw new Exception($"Type {dataItem.GetType()} is unhandled."),
             };
 

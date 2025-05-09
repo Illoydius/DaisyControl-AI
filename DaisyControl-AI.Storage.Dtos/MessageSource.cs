@@ -7,6 +7,7 @@ namespace DaisyControl_AI.Storage.Dtos
     {
         // TODO: Add emails + others
         Unknown = 0,
-        Discord = 1,
+        Inferenced = 1,
+        Discord = 2,
     }
 }

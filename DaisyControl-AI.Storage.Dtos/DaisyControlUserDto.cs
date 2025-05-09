@@ -1,10 +1,10 @@
 ﻿using System.Text.Json.Serialization;
 using DaisyControl_AI.Core.DaisyMind.DaisyMemory.AI;
-using Newtonsoft.Json.Converters;
+using DaisyControl_AI.Storage.Dtos.JsonConverters;
 
-namespace DaisyControl_AI.Storage.Dtos.Response.Users
+namespace DaisyControl_AI.Storage.Dtos
 {
-    public class DaisyControlUserResponseDto : IStorageDto
+    public class DaisyControlUserDto : IStorageDto
     {
         [JsonPropertyName("userId")]
         public string Id { get; set; }
@@ -12,14 +12,8 @@ namespace DaisyControl_AI.Storage.Dtos.Response.Users
         [JsonPropertyName("revision")]
         public long Revision { get; set; }
 
-        [JsonPropertyName("username")]
-        public string Username { get; set; }
-
-        [JsonPropertyName("firstName")]
-        public string FirstName { get; set; } = "Unknown";
-
-        [JsonPropertyName("lastName")]
-        public string LastName { get; set; } = "Unknown";
+        [JsonPropertyName("userInfo")]
+        public DaisyControlUserInfo UserInfo { get; set; }
 
         [JsonPropertyName("messagesHistory")]
         public List<DaisyControlMessage> MessagesHistory { get; set; }
@@ -33,10 +27,11 @@ namespace DaisyControl_AI.Storage.Dtos.Response.Users
         [JsonPropertyName("createdAtUtc")]
         public DateTimeOffset CreatedAtUtc { get; set; }
 
-        [JsonPropertyName("nbUnprocessedMessages")]
-        public int NbUnprocessedMessages { get; set; }
-
         [JsonPropertyName("status")]
         public UserStatus Status { get; set; }
+
+        [JsonConverter(typeof(DateTimeUnixJsonConverter))]
+        [JsonPropertyName("nextOperationAvailabilityAtUtc")]
+        public DateTime NextOperationAvailabilityAtUtc {get; set; }
     }
 }

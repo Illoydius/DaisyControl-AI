@@ -9,6 +9,10 @@
       {
         "Path": "DaisyControl-AI.Storage\\DaisyControl-AI.Storage.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "DaisyControl-AI.InferenceNode\\DaisyControl-AI.InferenceNode.csproj",
+        "Action": "Start"
       }
     ]
   }

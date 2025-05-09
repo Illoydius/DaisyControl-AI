@@ -146,21 +146,21 @@ namespace DaisyControl_AI.Core.Comms.Discord
 
             if (message is not SocketUserMessage socketUserMessage)
             {
-                LoggingManager.LogToFile("b418adb9-d7e9-4f29-835c-49e5e5a89138", $"Discord bot received a new unhandled message: [{message}] from [{message.Author.Username}({message.Author.Id})]. The message was of type [{message.GetType()}], which is unhandled.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+                LoggingManager.LogToFile("b418adb9-d7e9-4f29-835c-49e5e5a89138", $"Discord bot received a new unhandled message: [{message}] from [{message.Author.GlobalName}({message.Author.Username}/{message.Author.Id})]. The message was of type [{message.GetType()}], which is unhandled.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
                 return;
             }
 
             string messageValue = message.ToString();
             if (messageValue.Length > 1 && messageValue.First() == '!')
             {
-                Task.Run(() => discordBotCommandHandler.HandleNewCommandMessageAsync(socketUserMessage, replyToUserCallback));
+                Task.Run(async () => await discordBotCommandHandler.HandleNewCommandMessageAsync(socketUserMessage, replyToUserCallback));
                 return;
             }
 
-            Task.Run(() => discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage, replyToUserCallback));
+            Task.Run(async () => await discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage, replyToUserCallback));
         }
 
-        private async Task MessageUpdated(Cacheable<IMessage, ulong> cahedMessages, SocketMessage updatedMessage, ISocketMessageChannel channel)
+        private async Task MessageUpdated(Cacheable<IMessage, ulong> cachedMessages, SocketMessage updatedMessage, ISocketMessageChannel channel)
         {
             if (updatedMessage.Author.IsBot)
             {
@@ -168,9 +168,9 @@ namespace DaisyControl_AI.Core.Comms.Discord
             }
 
             // If the message was not in the cache, downloading it will result in getting a copy of `after`.
-            var previousMessage = await cahedMessages.GetOrDownloadAsync();
+            var previousMessage = await cachedMessages.GetOrDownloadAsync();
 
-            await discordBotUserMessageHandler.HandleUpdatedMessageAsync(cahedMessages, previousMessage, updatedMessage, channel);
+            Task.Run(async () => await discordBotUserMessageHandler.HandleUpdatedMessageAsync(cachedMessages, previousMessage, updatedMessage, channel));
         }
 
         public async Task<bool> SendMessageAsync(ulong channelId, DaisyControlMessageType messageType, string message)

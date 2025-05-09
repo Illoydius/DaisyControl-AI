@@ -1,6 +1,6 @@
-﻿using DaisyControl_AI.Common.Configuration.Discord;
+﻿using System.Text.Json.Serialization;
+using DaisyControl_AI.Common.Configuration.Discord;
 using DaisyControl_AI.Common.Configuration.Storage;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using static DaisyControl_AI.Common.Diagnostics.LoggingManager;
 
@@ -14,13 +14,17 @@ namespace DaisyControl_AI.Common.Configuration
         // ********************************************************************
         //                            Properties
         // ********************************************************************
+        [JsonPropertyName("discordBotConfiguration")]
         public DiscordBotConfiguration DiscordBotConfiguration { get; set; }
 
-        public InferenceServerConfiguration InferenceServerConfiguration { get; set; }
-
+        [JsonPropertyName("storageConfiguration")]
         public StorageConfiguration StorageConfiguration { get; set; }
 
+        [JsonPropertyName("inferenceNodeConfiguration")]
+        public InferenceNodeConfiguration InferenceNodeConfiguration { get; set; }
+
         [JsonConverter(typeof(StringEnumConverter))]
+        [JsonPropertyName("logVerbosity")]
         public LogVerbosity LogVerbosity { get; set; } = LogVerbosity.Minimal;
     }
 }

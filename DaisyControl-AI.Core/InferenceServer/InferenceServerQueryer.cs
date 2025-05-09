@@ -19,8 +19,8 @@ namespace DaisyControl_AI.Core.InferenceServer
         {
             var config = CommonConfigurationManager.ReloadConfig();
 
-            maxContext = config.InferenceServerConfiguration.MaxContextLength;
-            maxQueryLength = config.InferenceServerConfiguration.MaxTokensToGenerateInSingleQueryLength;
+            maxContext = config.InferenceNodeConfiguration.InferenceServerConfiguration.MaxContextLength;
+            maxQueryLength = config.InferenceNodeConfiguration.InferenceServerConfiguration.MaxTokensToGenerateInSingleQueryLength;
         }
 
         private static InferenceServerPromptResponseDto ParseMessageFromInferenceServerResponse(string responseDto)
@@ -52,7 +52,7 @@ namespace DaisyControl_AI.Core.InferenceServer
             };
 
             var httpContent = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
-            string queryResult = await CustomHttpClient.TryPostAsync(config.InferenceServerConfiguration.UrlGeneratePrompt, httpContent).ConfigureAwait(false);
+            string queryResult = await CustomHttpClient.TryPostAsync(config.InferenceNodeConfiguration.InferenceServerConfiguration.UrlGeneratePrompt, httpContent).ConfigureAwait(false);
             InferenceServerPromptResultResponseDto AIResponse = ParseMessageFromInferenceServerResponse(queryResult)?.Results?.FirstOrDefault();
             return AIResponse;
         }

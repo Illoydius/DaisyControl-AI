@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaisyControl-AI.Storage", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaisyControl-AI.Storage.Dtos", "DaisyControl-AI.Storage.Dtos\DaisyControl-AI.Storage.Dtos.csproj", "{1EF9E1B9-8952-4EAB-B206-FF01202C214A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaisyControl-AI.InferenceNode", "DaisyControl-AI.InferenceNode\DaisyControl-AI.InferenceNode.csproj", "{7D89F0AD-7567-4164-8BF4-E1D3C8E4D07D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{1EF9E1B9-8952-4EAB-B206-FF01202C214A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1EF9E1B9-8952-4EAB-B206-FF01202C214A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1EF9E1B9-8952-4EAB-B206-FF01202C214A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D89F0AD-7567-4164-8BF4-E1D3C8E4D07D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D89F0AD-7567-4164-8BF4-E1D3C8E4D07D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D89F0AD-7567-4164-8BF4-E1D3C8E4D07D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D89F0AD-7567-4164-8BF4-E1D3C8E4D07D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

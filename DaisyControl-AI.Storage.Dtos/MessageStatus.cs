@@ -6,8 +6,8 @@ namespace DaisyControl_AI.Storage.Dtos
     public enum MessageStatus
     {
         Pending = 0,
-        InProcess = 1,
+        //InProcess = 1,
         Processed = 2,
-        Error = 3,
+        //Error = 3,
     }
 }

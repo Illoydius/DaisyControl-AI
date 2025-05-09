@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
+using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 
@@ -36,7 +37,10 @@ namespace DaisyControl_AI.Common.HttpRequest
             DaisyControlAddUserRequestDto requestDto = new()
             {
                 Id = userId.ToString(),
-                Username = userName,
+                UserInfo = new()
+                {
+                    Username = userName,
+                }
             };
 
             var httpContent = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
@@ -58,7 +62,7 @@ namespace DaisyControl_AI.Common.HttpRequest
             }
         }
 
-        public async Task<bool> UpdateUserAsync(DaisyControlUserResponseDto user)
+        public async Task<bool> UpdateUserAsync(DaisyControlUserDto user)
         {
             if (user == null)
             {
@@ -77,12 +81,54 @@ namespace DaisyControl_AI.Common.HttpRequest
 
             try
             {
-                var responseDto = JsonSerializer.Deserialize<DaisyControlUserResponseDto>(serializedResponse);
+                var responseDto = JsonSerializer.Deserialize<DaisyControlUserDto>(serializedResponse);
                 return true;
             } catch (Exception e)
             {
-                LoggingManager.LogToFile("707b4170-d6c3-4cc0-9f58-41be5f88b3ee", $"Failed to deserialize response of type [{typeof(DaisyControlUserResponseDto)}] from url [{url}].");
+                LoggingManager.LogToFile("707b4170-d6c3-4cc0-9f58-41be5f88b3ee", $"Failed to deserialize response of type [{typeof(DaisyControlUserDto)}] from url [{url}].");
                 return false;
+            }
+        }
+
+        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> GetUsersWithUserPendingMessagesAsync(int limitNbUsersToFetch = 3)
+        {
+            string url = $"{usersUrl}/unprocessedUsersMessages?maxNbUsersToFetch={limitNbUsersToFetch}";
+            var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(serializedResponse))
+            {
+                return null;
+            }
+
+            try
+            {
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersWithUnprocessedMessagesResponseDto>(serializedResponse);
+                return responseDto;
+            } catch (Exception e)
+            {
+                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersWithUnprocessedMessagesResponseDto)}] from url [{url}].");
+                return null;
+            }
+        }
+
+        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> GetUsersWithAIPendingMessagesAsync(int limitNbUsersToFetch = 3)
+        {
+            string url = $"{usersUrl}/unprocessedAIMessages?maxNbUsersToFetch={limitNbUsersToFetch}";
+            var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(serializedResponse))
+            {
+                return null;
+            }
+
+            try
+            {
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersWithUnprocessedMessagesResponseDto>(serializedResponse);
+                return responseDto;
+            } catch (Exception e)
+            {
+                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersWithUnprocessedMessagesResponseDto)}] from url [{url}].");
+                return null;
             }
         }
     }

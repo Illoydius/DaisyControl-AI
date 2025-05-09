@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-using DaisyControl_AI.Common;
+﻿using System;
+using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
 using DaisyControl_AI.Core.DaisyMind;
@@ -7,14 +7,16 @@ using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.AspNetCore.Mvc;
 using static DaisyControl_AI.Core.Comms.Discord.DaisyControlDiscordClient;
 
 namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 {
     public class DiscordBotUserMessageHandler : IDiscordBotUserMessageHandler
     {
-        string messagesUrl = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/messagesbuffer";
-        string usersUrl = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/users";
+        DaisyControlStorageUsersClient httpRequestClient = new();
+        //string messagesUrl = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/messagesbuffer";
+        //string usersUrl = $"{DaisyControlConstants.StorageWebApiBaseUrl}api/users";
 
         public async Task HandleNewClientMessageAsync(SocketUserMessage socketUserMessage, ReplyToUserCallback replyToUserCallback)
         {
@@ -26,70 +28,53 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 
             LoggingManager.LogToFile("73d4fa09-9410-4408-93e8-921570260372", $"Discord bot received a new message: [{socketUserMessage}] from [{socketUserMessage.Author.Username}({socketUserMessage.Author.Id})].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
 
-            // Add the new message to the storage so async workers can work on it
-
-
-            if (!await AddMessageToBuffer(
-                socketUserMessage.Author.Id,
-                socketUserMessage.Author.GlobalName,
-                new DaisyControlAddMessageToBufferDto()
-                {
-                    UserId = socketUserMessage.Author.Id.ToString(),
-                    Message = new Storage.Dtos.DaisyControlMessage
-                    {
-                        ReferentialType = Storage.Dtos.MessageReferentialType.User,
-                        MessageContent = socketUserMessage.ToString(),
-                        //MessageStatus = Storage.Dtos.MessageStatus.Pending,
-                        MessageSource = Storage.Dtos.MessageSource.Discord,
-                    }
-                }).ConfigureAwait(false))
-            {
-                LoggingManager.LogToFile("75a973b3-255d-48c6-b4ac-7a277c294612", "Couldn't queue message to storage.");
-            }
-
-            return;
-
-            // Execute message handling
-            // Here, we have a few main options. If it's a new user, we'll go to the Onboarding Action, which will make the AI talk to the new user and eventually ask the user to register (create a new User in Storage)
-            // Or, if it's an existing user, we'll go in the Core (main) Action, that will make the AI fetch the data we have on that user and see how to proplery respond to the message.
-
-            // Get User if he wasn't provided
-            var HttpRequestClient = new DaisyControlStorageUsersClient();
-            DaisyControlUserResponseDto user = null;
+            // Get the user from storage
+            DaisyControlUserDto user = null;
 
             try
             {
-                user = await HttpRequestClient.GetUserAsync(socketUserMessage.Author.Id).ConfigureAwait(false);
+                user = await httpRequestClient.GetUserAsync(socketUserMessage.Author.Id).ConfigureAwait(false);
             } catch (Exception exception)
             {
-                LoggingManager.LogToFile("882e54fc-16e3-4c44-9679-6038955feeac", $"Discord bot couldn't find user [{socketUserMessage.Author.Id}]. The message from this user will be ignored.", aException: exception, aLogVerbosity: LoggingManager.LogVerbosity.Minimal);
+                LoggingManager.LogToFile("2046bd53-aae0-439f-8246-f14e07e4d33d", $"Discord bot couldn't find user [{socketUserMessage.Author.Id}]. The message from this user will be ignored.", aException: exception);
                 return;
             }
 
             if (user == null)
             {
                 // Create User in DB, even if we only know his ID and Username
-                user = await HttpRequestClient.AddUserAsync(socketUserMessage.Author.Id, socketUserMessage.Author.GlobalName).ConfigureAwait(false);
+                user = await httpRequestClient.AddUserAsync(socketUserMessage.Author.Id, socketUserMessage.Author.GlobalName).ConfigureAwait(false);
+
+                if (user == null)
+                {
+                    LoggingManager.LogToFile("84f8333a-35a4-4ac2-8ec3-172018e0f2a5", $"Discord bot couldn't create user [{socketUserMessage.Author.Id}]. The message from this user will be ignored.");
+                    return;
+                }
             }
 
             // Next, we want to create the AI "DaisyMind" related to that User. (A User could personalize the bot personality, for instance, so it's unique for each user)
             DaisyControlMind daisyMind = await DaisyMindFactory.GenerateDaisyMind(user).ConfigureAwait(false);
 
             // Add the new user message to DaisyMind memory
-            var userMessage = new Storage.Dtos.DaisyControlMessage
+            var userMessage = new DaisyControlMessage
             {
-                ReferentialType = Storage.Dtos.MessageReferentialType.User,
+                CreatedAtUtc = DateTime.UtcNow,
+                ReferentialType = MessageReferentialType.User,
                 MessageContent = socketUserMessage.ToString(),
-                //MessageStatus = Storage.Dtos.MessageStatus.ToProcess,
-                MessageSource = Storage.Dtos.MessageSource.Discord,
+                MessageStatus = MessageStatus.Pending,
+                SourceInfo = new()
+                {
+                    MessageSource = Storage.Dtos.MessageSource.Discord,
+                    MessageSourceType = socketUserMessage.Channel.GetType() == typeof(SocketDMChannel) ? MessageSourceType.DirectMessage : MessageSourceType.Channel,
+                    MessageSourceReferential = socketUserMessage.Channel.Id.ToString(),
+                },
             };
 
             // Response was correctly received from user. Save the user message to storage
             daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
             daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(userMessage);
-            daisyMind.DaisyMemory.User.Global.NbUnprocessedMessages++;
 
-            bool storageUpdateSuccess = await HttpRequestClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
+            bool storageUpdateSuccess = await httpRequestClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
 
             if (!storageUpdateSuccess)
             {
@@ -97,8 +82,10 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                 return;
             } else
             {
-                LoggingManager.LogToFile("27d04e3a-697b-42d2-835f-f2ff82bf0dbe", $"Message from user [{socketUserMessage.Author.Id}] was properly registered and queue to be processed by the AI as soon as possible.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+                LoggingManager.LogToFile("27d04e3a-697b-42d2-835f-f2ff82bf0dbe", $"Message from user [{socketUserMessage.Author.Id}] was properly registered and queued to be processed by the AI as soon as possible.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
             }
+
+            return;
 
             //InferenceServerPromptResultResponseDto AIresponse = await InferenceServerQueryer.GenerateStandardAiResponseAsync(ContextBuilder.BuildContext(daisyMind)).ConfigureAwait(false);
 
@@ -158,56 +145,6 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             //    // The user is known, go to the main handling
 
             //    // TODO
-            //}
-        }
-
-        private async Task<bool> AddMessageToBuffer(ulong userId, string userName, DaisyControlAddMessageToBufferDto daisyControlAddMessageToBufferRequestDto)
-        {
-            var HttpRequestMessagesClient = new DaisyControlStorageMessagesClient();
-            var result = await HttpRequestMessagesClient.AddMessageToBufferAsync(userId, userName, daisyControlAddMessageToBufferRequestDto);
-
-            return result != null;
-
-            //var httpContent = new StringContent(JsonSerializer.Serialize(daisyControlAddMessageToBufferRequestDto), Encoding.UTF8, "application/json");
-            //var serializedResponse = await CustomHttpClient.TryPostAsync(messagesUrl, httpContent).ConfigureAwait(false);
-
-            //if (string.IsNullOrWhiteSpace(serializedResponse))
-            //{
-            //    return false;
-            //}
-
-            //try
-            //{
-            //    var responseDto = JsonSerializer.Deserialize<DaisyControlAddUserResponseDto>(serializedResponse);
-
-            //    // TODO: validate responseDto
-
-            //    return true;
-            //} catch (Exception e)
-            //{
-            //    var responseError = serializedResponse.AsResponseError();
-            //    if (responseError != null)
-            //    {
-            //        if (responseError.ErrorCode == StorageResponseErrorCodes.DaisyControlAddMessageToBufferRequestExecutor_UserNotFound)
-            //        {
-            //            // Add the new user
-                        
-            //            HttpRequestClient.AddUserAsync();
-            //            var httpContent = new StringContent(JsonSerializer.Serialize(new DaisyControlAddUserRequestDto()
-            //            {
-                            
-            //            }), Encoding.UTF8, "application/json");
-            //            var user = await CustomHttpClient.TryPostAsync(usersUrl, httpContent).ConfigureAwait(false);
-
-            //            // Redo the add message
-            //            return await AddMessageToBuffer(daisyControlAddMessageToBufferRequestDto);
-            //        }
-            //    } else
-            //    {
-
-            //        LoggingManager.LogToFile("5d38c1c0-7832-498d-a587-6722a4e6d2a9", $"Failed to deserialize response of type [{typeof(DaisyControlAddUserResponseDto)}] from adding new message to storage. Serialized response: [{serializedResponse}].");
-            //        return false;
-            //    }
             //}
         }
 

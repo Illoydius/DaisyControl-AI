@@ -1,11 +1,11 @@
 ﻿using DaisyControl_AI.Common.Diagnostics;
-using DaisyControl_AI.Storage.Dtos.Response.Users;
+using DaisyControl_AI.Storage.Dtos;
 
 namespace DaisyControl_AI.Core.DaisyMind
 {
     public static class DaisyMindFactory
     {
-        public static async Task<DaisyControlMind> GenerateDaisyMind(DaisyControlUserResponseDto userDto)
+        public static async Task<DaisyControlMind> GenerateDaisyMind(DaisyControlUserDto userDto)
         {
             if (userDto == null)
             {

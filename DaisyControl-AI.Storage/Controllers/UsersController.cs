@@ -1,4 +1,5 @@
 ﻿using DaisyControl_AI.Common.Exceptions.HTTP;
+using DaisyControl_AI.Storage.Dtos.Requests;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Workflows;
 using Microsoft.AspNetCore.Mvc;
@@ -36,10 +37,10 @@ namespace DaisyControl_AI.Storage.Controllers
         {
             object response = await workflow.ExecuteAsync(userRequest);
 
-            if (response == null)
-            {
-                return NotFound();
-            }
+            //if (response == null)
+            //{
+            //    return NotFound();
+            //}
 
             return response;
         }
@@ -82,22 +83,26 @@ namespace DaisyControl_AI.Storage.Controllers
             return response;
         }
 
-        ////
-        ///// <summary>
-        ///// Get a chunk of users with unprocessed messages.
-        ///// </summary>
-        //[HttpGet]
-        //[Route("unprocessedMessages")]
-        //public async Task<ActionResult<object>> UsersWithUnprocessedMessages(DaisyControlGetUsersWithUnprocessedMessagesRequestDto userRequest)
-        //{
-        //    object response = await workflow.ExecuteAsync(userRequest);
+        /// <summary>
+        /// Get a chunk of users with unprocessed messages.
+        /// </summary>
+        [HttpGet]
+        [Route("unprocessedUsersMessages")]
+        public async Task<ActionResult<object>> UsersWithUnprocessedUserMessages(DaisyControlGetUsersWithUnprocessedUserMessagesRequestDto userRequest)
+        {
+            object response = await workflow.ExecuteAsync(userRequest);
+            return response;
+        }
 
-        //    if (response == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return response;
-        //}
+        /// <summary>
+        /// Get a chunk of users with unprocessed messages.
+        /// </summary>
+        [HttpGet]
+        [Route("unprocessedAIMessages")]
+        public async Task<ActionResult<object>> UsersWithUnprocessedAIMessages(DaisyControlGetUsersWithUnprocessedAIMessagesRequestDto userRequest)
+        {
+            object response = await workflow.ExecuteAsync(userRequest);
+            return response;
+        }
     }
 }

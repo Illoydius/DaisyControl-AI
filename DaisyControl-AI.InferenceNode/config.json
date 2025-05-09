@@ -1,0 +1,12 @@
+{
+    "$type": "DaisyControl_AI.Common.Configuration.DaisyControlConfig, DaisyControl-AI.Common",
+    "inferenceNodeConfiguration": {
+        "getPendingMessagesFromBufferUrl": "https://127.0.0.1:62455/api/messagesbuffer/reserve?maxNbPendingMessagesToFetch=3",
+        "inferenceServerConfiguration": {
+            "MaxContextLength": 16384, // Retrieve the current max context length setting value
+            "MaxTokensToGenerateInSingleQueryLength": 128, // Retrieve the current max length (amount to generate) setting value
+            "UrlGeneratePrompt": "http://localhost:5001/api/v1/generate" // Generate text with a specified prompt
+        }
+    },
+    "logVerbosity": "Verbose"
+}

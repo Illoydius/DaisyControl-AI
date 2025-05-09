@@ -36,14 +36,14 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
 
         private static void BuildBasicAIContext(StringBuilder stringBuilder, DaisyControlMind daisyMind)
         {
-            string userPresentation = daisyMind.DaisyMemory.User.Global.FirstName;
+            string userPresentation = daisyMind.DaisyMemory.User.Global.UserInfo.FirstName;
             if (string.IsNullOrWhiteSpace(userPresentation))
             {
                 userPresentation = "someone new you don't know";
             }
 
-            string interlocutor = daisyMind.DaisyMemory.User.Global.FirstName;
-            string interlocutorRef = daisyMind.DaisyMemory.User.Global.FirstName;
+            string interlocutor = daisyMind.DaisyMemory.User.Global.UserInfo.FirstName;
+            string interlocutorRef = daisyMind.DaisyMemory.User.Global.UserInfo.FirstName;
 
             if (interlocutor.ToLowerInvariant().Trim() == "unknown")
             {
@@ -96,7 +96,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"Features(Long blonde colored hair + Straight hair tied in a bun with bangs + Blue colored eyes + Natural blush.)");
             stringBuilder.AppendLine($"Personality(Careful + Friendly + Shy + Clingy + Nervous + Submissive)");
             stringBuilder.AppendLine($"Occupation(Survivor)");
-            stringBuilder.AppendLine($"Relationship(Stranger to {daisyMind.DaisyMemory.User.Global.FirstName}.)");
+            stringBuilder.AppendLine($"Relationship(Stranger to {daisyMind.DaisyMemory.User.Global.UserInfo.FirstName}.)");
             stringBuilder.AppendLine($"Likes(Dogs + Sunsets + Cuddling + Books + Feeling wanted.)");
             stringBuilder.AppendLine($"Dislikes(Zombies + Abandonment + Being alone.)");
             stringBuilder.AppendLine($"Speech(She has a soft, friendly voice.)");
@@ -132,12 +132,12 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                 switch (message.ReferentialType)
                 {
                     case Storage.Dtos.MessageReferentialType.User:
-                        if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.FirstName))
+                        if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.FirstName))
                         {
                             referentialName = "User";
                         } else
                         {
-                            referentialName = daisyMind.DaisyMemory.User.Global.FirstName;
+                            referentialName = daisyMind.DaisyMemory.User.Global.UserInfo.FirstName;
                         }
                         break;
                     case Storage.Dtos.MessageReferentialType.Assistant:
@@ -146,7 +146,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                         // Ignore default, considered as System
                 }
 
-                string Username = $"{daisyMind.DaisyMemory.User.Global.FirstName}";
+                string Username = $"{daisyMind.DaisyMemory.User.Global.UserInfo.FirstName}";
                 if (string.IsNullOrWhiteSpace(Username))
                 {
                     Username = "Unknown";
@@ -165,8 +165,8 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
         {
             stringBuilder.AppendLine($"Format your text message in the following format: \"<|im_start|>assistant\r\n{daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName}: {{{daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} text message content}}<|im_end|>\"");
             stringBuilder.AppendLine($"Keep your reply short and consise, as you're communicating using text messages.");
-            stringBuilder.AppendLine($"Your reply should only contains what {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} says and should only represent a single reply from {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} in a continuous conversation with {daisyMind.DaisyMemory.User.Global.FirstName}. Do not add any additional information outside of {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName}'s text message.");
-            stringBuilder.AppendLine($"Generate the next text message from {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} from the ongoing conversation with {daisyMind.DaisyMemory.User.Global.FirstName}. End your reply when it's {daisyMind.DaisyMemory.User.Global.FirstName}'s turn to reply. Do not reply for {daisyMind.DaisyMemory.User.Global.FirstName}.");
+            stringBuilder.AppendLine($"Your reply should only contains what {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} says and should only represent a single reply from {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} in a continuous conversation with {daisyMind.DaisyMemory.User.Global.UserInfo.FirstName}. Do not add any additional information outside of {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName}'s text message.");
+            stringBuilder.AppendLine($"Generate the next text message from {daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} from the ongoing conversation with {daisyMind.DaisyMemory.User.Global.UserInfo.FirstName}. End your reply when it's {daisyMind.DaisyMemory.User.Global.UserInfo.FirstName}'s turn to reply. Do not reply for {daisyMind.DaisyMemory.User.Global.UserInfo.FirstName}.");
         }
     }
 }

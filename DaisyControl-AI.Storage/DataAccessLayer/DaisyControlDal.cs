@@ -7,10 +7,9 @@ using Amazon.Runtime;
 using DaisyControl_AI.Common.Configuration;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.Exceptions;
+using DaisyControl_AI.Storage.Dtos.Date;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests.MessagesBuffer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
-using DaisyControl_AI.Storage.Dtos.Response.Messages;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 
 namespace DaisyControl_AI.Storage.DataAccessLayer
@@ -20,7 +19,6 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         private const int NbMsToDelayAfterProvisionException = 5000;
         private const int NbMsUnreachableDbOnStartup = 30000;
         private string userTableName = "DaisyControl-Users";
-        private string messagesBufferTableName = "DaisyControl-MessagesBuffer";
         private AWSCredentials AWSCredentials = new BasicAWSCredentials("local", "local");
         private string DynamoDBUri = "http://127.0.0.1:8822";
         private IAmazonDynamoDB dynamoDBClient = null;
@@ -53,48 +51,8 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                         }, new List<AttributeDefinition>
                         {
                             new AttributeDefinition("userId", ScalarAttributeType.S),
-                            //new AttributeDefinition("status", ScalarAttributeType.S),
-                            //new AttributeDefinition("nbUnprocessedMessages", ScalarAttributeType.N),
-                        }, new ProvisionedThroughput
-                        {
-                            ReadCapacityUnits = 1000,
-                            WriteCapacityUnits = 1000,
-                        })
-                        {
-                            //GlobalSecondaryIndexes = new List<GlobalSecondaryIndex>
-                            //{
-                            //    new()
-                            //    {
-                            //        IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
-                            //        KeySchema = new List<KeySchemaElement>
-                            //        {
-                            //            new("status", KeyType.HASH),
-                            //            new("nbUnprocessedMessages", KeyType.RANGE),
-                            //        },
-                            //        Projection = new Projection
-                            //        {
-                            //            ProjectionType = ProjectionType.ALL,
-                            //        },
-                            //        ProvisionedThroughput = new ProvisionedThroughput
-                            //        {
-                            //            ReadCapacityUnits = 1000,
-                            //            WriteCapacityUnits = 1000,
-                            //        },
-                            //    },
-                            //},
-                        });
-                    }
-
-                    // Messages Buffer Table
-                    if (!tables.TableNames.Contains(messagesBufferTableName))
-                    {
-                        await CreateTable(new CreateTableRequest(messagesBufferTableName, new List<KeySchemaElement>
-                        {
-                            new KeySchemaElement("messageId", KeyType.HASH),
-                        }, new List<AttributeDefinition>
-                        {
-                            new AttributeDefinition("messageId", ScalarAttributeType.S),
                             new AttributeDefinition("status", ScalarAttributeType.S),
+                            new AttributeDefinition("nextOperationAvailabilityAtUtc", ScalarAttributeType.N),
                         }, new ProvisionedThroughput
                         {
                             ReadCapacityUnits = 1000,
@@ -105,10 +63,11 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                             {
                                 new()
                                 {
-                                    IndexName = config.StorageConfiguration.PendingMessagesToProcessIndexName,
+                                    IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
                                     KeySchema = new List<KeySchemaElement>
                                     {
                                         new("status", KeyType.HASH),
+                                        new("nextOperationAvailabilityAtUtc", KeyType.RANGE),
                                     },
                                     Projection = new Projection
                                     {
@@ -198,6 +157,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             }
 
             var utcNow = DateTime.UtcNow;
+            daisyControlAddUserDto.Status = UserStatus.Ready;
             daisyControlAddUserDto.CreatedAtUtc = utcNow;
             daisyControlAddUserDto.LastModifiedAtUtc = utcNow;
             daisyControlAddUserDto.Revision = 0;
@@ -218,7 +178,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 return daisyControlAddUserDto;
             } catch (ConditionalCheckFailedException)
             {
-                throw new CommonException("fb23d483-9131-45f8-90f4-3bd192bfe520", $"User was created by another instance. User [{daisyControlAddUserDto.Username}] won't be created to avoid duplicates.");
+                throw new CommonException("fb23d483-9131-45f8-90f4-3bd192bfe520", $"User was created by another instance. User [{daisyControlAddUserDto.UserInfo.Username}] won't be created to avoid duplicates.");
             } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
@@ -227,7 +187,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             } catch (Exception ex)
             {
                 // wrap exception
-                throw new CommonException("008d82d9-4181-4466-be67-07533b912df0", $"Unhandled exception when querying database. Failed to add User of Name [{daisyControlAddUserDto.Username}] to storage. Exception message [{ex.Message}].", ex);
+                throw new CommonException("008d82d9-4181-4466-be67-07533b912df0", $"Unhandled exception when querying database. Failed to add User of Name [{daisyControlAddUserDto.UserInfo.Username}] to storage. Exception message [{ex.Message}].", ex);
             }
         }
 
@@ -244,6 +204,19 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             var utcNow = DateTime.UtcNow;
             daisyControlUpdateUserDto.LastModifiedAtUtc = utcNow;
             daisyControlUpdateUserDto.Revision++;
+
+            // If we have a pending message, set the User status to Pending
+            if (daisyControlUpdateUserDto.Status != UserStatus.AIMessagePending && daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.Assistant && a.MessageStatus == MessageStatus.Pending))
+            {
+                daisyControlUpdateUserDto.Status = UserStatus.AIMessagePending;
+            } else if (daisyControlUpdateUserDto.Status != UserStatus.UserMessagePending && daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.User && a.MessageStatus == MessageStatus.Pending))
+            {
+                daisyControlUpdateUserDto.Status = UserStatus.UserMessagePending;
+            } else if (daisyControlUpdateUserDto.Status == UserStatus.AIMessagePending && !daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.Assistant && a.MessageStatus == MessageStatus.Pending) ||
+                       daisyControlUpdateUserDto.Status == UserStatus.UserMessagePending && !daisyControlUpdateUserDto.MessagesHistory.Any(a => a.ReferentialType == MessageReferentialType.User && a.MessageStatus == MessageStatus.Pending))
+            {
+                daisyControlUpdateUserDto.Status = UserStatus.Ready;
+            }
 
             try
             {
@@ -265,7 +238,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 return daisyControlUpdateUserDto;
             } catch (ConditionalCheckFailedException)
             {
-                throw new CommonException("e5f4ed44-3488-42a2-aa11-2a80405f73ca", $"Revision didn't match. User [{daisyControlUpdateUserDto.Username}] won't be updated.");
+                throw new CommonException("e5f4ed44-3488-42a2-aa11-2a80405f73ca", $"Revision didn't match. User [{daisyControlUpdateUserDto.UserInfo.Username}] won't be updated.");
             } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
@@ -311,92 +284,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         }
 
         /// <inheritdoc />
-        public async Task<DaisyControlGetMessageFromBufferResponseDto> TryGetMessageFromBufferAsync(string messageId)
-        {
-            if (string.IsNullOrWhiteSpace(messageId))
-            {
-                throw new ArgumentNullException(nameof(messageId));
-            }
-
-            try
-            {
-                var userItemsResult = await dynamoDBClient.GetItemAsync(new GetItemRequest
-                {
-                    TableName = messagesBufferTableName,
-                    Key = new Dictionary<string, AttributeValue>
-                    {
-                        { "messageId", new AttributeValue { S = messageId } },
-                    },
-                }).ConfigureAwait(false);
-
-                if (userItemsResult.Item == null || userItemsResult.Item.Count <= 0)
-                {
-                    return null; // Item not found
-                }
-
-                var responseDocument = Document.FromAttributeMap(userItemsResult.Item);
-
-                var jsonResponse = responseDocument.ToJson();
-                var messageDto = JsonSerializer.Deserialize<DaisyControlGetMessageFromBufferResponseDto>(jsonResponse);
-
-                return messageDto;
-
-            } catch (ProvisionedThroughputExceededException)
-            {
-                await Task.Delay(NbMsToDelayAfterProvisionException);
-
-                throw;
-            } catch (Exception ex)
-            {
-                // wrap exception
-                throw new CommonException("33b227bc-c6f5-4b60-b179-f62fc09faf5b", $"Unhandled exception when querying database. Failed to get pending message matching messageId [{messageId}] from storage. Exception message [{ex.Message}].", ex);
-            }
-        }
-
-        public async Task<DaisyControlAddMessageToBufferDto> TryAddMessageToBufferAsync(DaisyControlAddMessageToBufferDto daisyControlAddMessageToBufferDto)
-        {
-            if (daisyControlAddMessageToBufferDto == null)
-            {
-                throw new ArgumentNullException(nameof(daisyControlAddMessageToBufferDto));
-            }
-
-            var utcNow = DateTime.UtcNow;
-            daisyControlAddMessageToBufferDto.Id = Guid.NewGuid().ToString();
-            daisyControlAddMessageToBufferDto.CreatedAtUtc = utcNow;
-            daisyControlAddMessageToBufferDto.LastModifiedAtUtc = utcNow;
-            daisyControlAddMessageToBufferDto.Revision = 0;
-
-            try
-            {
-                var userItemsResult = await dynamoDBClient.PutItemAsync(new PutItemRequest
-                {
-                    TableName = messagesBufferTableName,
-                    Item = daisyControlAddMessageToBufferDto.ToDocument(null).ToAttributeMap(),
-                    ConditionExpression = "messageId <> :messageId",
-                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                    {
-                        { ":messageId", new AttributeValue { S = daisyControlAddMessageToBufferDto.Id } },
-                    },
-                }).ConfigureAwait(false);
-
-                return daisyControlAddMessageToBufferDto;
-            } catch (ConditionalCheckFailedException)
-            {
-                throw new CommonException("98f53fa4-4ce1-40ff-92bd-bc30b451be67", $"Message in MessagesBuffer was created by another instance. Message [{daisyControlAddMessageToBufferDto.Id}] won't be created to avoid duplicates.");
-            } catch (ProvisionedThroughputExceededException)
-            {
-                await Task.Delay(NbMsToDelayAfterProvisionException);
-
-                throw;
-            } catch (Exception ex)
-            {
-                // wrap exception
-                throw new CommonException("a75d9a59-b1f2-4982-b97a-e656d07a0c07", $"Unhandled exception when querying database. Failed to add Message to MessagesBuffer of Id [{daisyControlAddMessageToBufferDto.Id}] to storage. Exception message [{ex.Message}].", ex);
-            }
-        }
-
-        /// <inheritdoc />
-        public async Task<DaisyControlMessageToBufferResponseDto[]> TryGetPendingMessagesFromBufferAsync(int limitRows = 5)
+        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithUserMessagesToProcessAsync(int limitRows)
         {
             var config = CommonConfigurationManager.ReloadConfig();
 
@@ -404,21 +292,27 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             {
                 var queryResponse = await dynamoDBClient.QueryAsync(new QueryRequest
                 {
-                    TableName = messagesBufferTableName,
+                    TableName = userTableName,
                     Limit = limitRows,
                     ConsistentRead = false,
-                    IndexName = config.StorageConfiguration.PendingMessagesToProcessIndexName,
-                    KeyConditionExpression = "#status = :status",
+                    IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
+                    KeyConditionExpression = "#status = :status AND #nextOperationAvailabilityAtUtc < :nextOperationAvailabilityAtUtc",
                     ExpressionAttributeNames = new Dictionary<string, string>
                     {
                         {
                             "#status", "status"
                         },
+                        {
+                            "#nextOperationAvailabilityAtUtc", "nextOperationAvailabilityAtUtc"
+                        },
                     },
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                     {
                         {
-                            ":status", new AttributeValue { S = MessageStatus.Pending.ToString() }
+                            ":status", new AttributeValue { S = UserStatus.UserMessagePending.ToString() }
+                        },
+                        {
+                            ":nextOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
                         },
                     },
                 }).ConfigureAwait(false);
@@ -428,17 +322,21 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     return null; // no Items found
                 }
 
-                List<DaisyControlMessageToBufferResponseDto> MessagesCollection = new();
+                List<DaisyControlGetUserResponseDto> UsersCollection = new();
 
                 foreach (Dictionary<string, AttributeValue> itemFromDatabase in queryResponse.Items)
                 {
                     var responseDocument = Document.FromAttributeMap(itemFromDatabase);
                     var jsonResponse = responseDocument.ToJson();
-                    var user = JsonSerializer.Deserialize<DaisyControlMessageToBufferResponseDto>(jsonResponse);
-                    MessagesCollection.Add(user);
+                    var user = JsonSerializer.Deserialize<DaisyControlGetUserResponseDto>(jsonResponse);
+                    UsersCollection.Add(user);
                 }
 
-                return MessagesCollection.ToArray();
+                return new DaisyControlGetUsersWithUnprocessedMessagesResponseDto
+                {
+                    Users = UsersCollection.ToArray(),
+                };
+
             } catch (ProvisionedThroughputExceededException)
             {
                 await Task.Delay(NbMsToDelayAfterProvisionException);
@@ -447,72 +345,74 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             } catch (Exception ex)
             {
                 // wrap exception
-                throw new CommonException("a82d2dbe-f49d-4888-bb4b-71a57818baf3", $"Unhandled exception when querying database to fetch users by unprocessed messages. Exception message [{ex.Message}].", ex);
+                throw new CommonException("0333ac3c-5f3b-49a7-a34d-763c500bd691", $"Unhandled exception when querying database to fetch users with pending User messages. Exception message [{ex.Message}].", ex);
             }
         }
 
         /// <inheritdoc />
-        //public async Task<DaisyControlStorageUserDto[]> TryGetUsersWithMessagesToProcessAsync(int limitRows = 10)
-        //{
-        //    var config = CommonConfigurationManager.ReloadConfig();
+        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows)
+        {
+            var config = CommonConfigurationManager.ReloadConfig();
 
-        //    try
-        //    {
-        //        var queryResponse = await dynamoDBClient.QueryAsync(new QueryRequest
-        //        {
-        //            TableName = userTableName,
-        //            Limit = limitRows,
-        //            ConsistentRead = false,
-        //            IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
-        //            KeyConditionExpression = "#Status = :Status AND #NbUnprocessedMessages > :NbUnprocessedMessages",
-        //            ExpressionAttributeNames = new Dictionary<string, string>
-        //            {
-        //                {
-        //                    "#NbUnprocessedMessages", "nbUnprocessedMessages"
-        //                },
-        //                {
-        //                    "#Status", "status"
-        //                },
-        //            },
-        //            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-        //            {
-        //                {
-        //                    ":NbUnprocessedMessages", new AttributeValue { N = "0" }
-        //                },
-        //                {
-        //                    ":Status", new AttributeValue { S = UserStatus.Completed.ToString() }
-        //                },
-        //            },
-        //        }).ConfigureAwait(false);
+            try
+            {
+                var queryResponse = await dynamoDBClient.QueryAsync(new QueryRequest
+                {
+                    TableName = userTableName,
+                    Limit = limitRows,
+                    ConsistentRead = false,
+                    IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
+                    KeyConditionExpression = "#status = :status AND #nextOperationAvailabilityAtUtc < :nextOperationAvailabilityAtUtc",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        {
+                            "#status", "status"
+                        },
+                        {
+                            "#nextOperationAvailabilityAtUtc", "nextOperationAvailabilityAtUtc"
+                        },
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        {
+                            ":status", new AttributeValue { S = UserStatus.AIMessagePending.ToString() }
+                        },
+                        {
+                            ":nextOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
+                        },
+                    },
+                }).ConfigureAwait(false);
 
-        //        if (queryResponse.Items.Count <= 0)
-        //        {
-        //            return null; // no Items found
-        //        }
+                if (queryResponse.Items.Count <= 0)
+                {
+                    return null; // no Items found
+                }
 
-        //        List<DaisyControlStorageUserDto> UserCollection = new();
+                List<DaisyControlGetUserResponseDto> UsersCollection = new();
 
-        //        foreach (Dictionary<string, AttributeValue> itemFromDatabase in queryResponse.Items)
-        //        {
-        //            var responseDocument = Document.FromAttributeMap(itemFromDatabase);
-        //            var jsonResponse = responseDocument.ToJson();
-        //            var user = JsonSerializer.Deserialize<DaisyControlStorageUserDto>(jsonResponse);
-        //            UserCollection.Add(user);
-        //        }
+                foreach (Dictionary<string, AttributeValue> itemFromDatabase in queryResponse.Items)
+                {
+                    var responseDocument = Document.FromAttributeMap(itemFromDatabase);
+                    var jsonResponse = responseDocument.ToJson();
+                    var user = JsonSerializer.Deserialize<DaisyControlGetUserResponseDto>(jsonResponse);
+                    UsersCollection.Add(user);
+                }
 
-        //        return UserCollection.ToArray();
-        //    }
-        //    catch (ProvisionedThroughputExceededException)
-        //    {
-        //        await Task.Delay(NbMsToDelayAfterProvisionException);
+                return new DaisyControlGetUsersWithUnprocessedMessagesResponseDto
+                {
+                    Users = UsersCollection.ToArray(),
+                };
 
-        //        throw;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // wrap exception
-        //        throw new CommonException("a82d2dbe-f49d-4888-bb4b-71a57818baf3", $"Unhandled exception when querying database to fetch users by unprocessed messages. Exception message [{ex.Message}].", ex);
-        //    }
-        //}
+            } catch (ProvisionedThroughputExceededException)
+            {
+                await Task.Delay(NbMsToDelayAfterProvisionException);
+
+                throw;
+            } catch (Exception ex)
+            {
+                // wrap exception
+                throw new CommonException("49e068e8-920c-4861-9e95-0f975146f530", $"Unhandled exception when querying database to fetch users with pending AI messages. Exception message [{ex.Message}].", ex);
+            }
+        }
     }
 }

@@ -1,12 +1,12 @@
 ﻿using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DaisyControl_AI.Storage.Dtos.Requests
+namespace DaisyControl_AI.Storage.Dtos.Requests.Users
 {
     /// <summary>
     /// Represent a request to get a chunk of users with unprocessed messages.
     /// </summary>
-    public class DaisyControlGetUsersWithUnprocessedMessagesRequestDto : IStorageDto
+    public class DaisyControlGetUsersWithUnprocessedAIMessagesRequestDto : IStorageDto
     {
         [FromQuery]
         [JsonPropertyName("maxNbUsersToFetch")]
