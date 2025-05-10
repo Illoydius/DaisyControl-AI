@@ -2,7 +2,7 @@
 using DaisyControl_AI.Core.DaisyMind.DaisyMemory.AI;
 using DaisyControl_AI.Storage.Dtos.JsonConverters;
 
-namespace DaisyControl_AI.Storage.Dtos
+namespace DaisyControl_AI.Storage.Dtos.User
 {
     public class DaisyControlUserDto : IStorageDto
     {
@@ -31,7 +31,14 @@ namespace DaisyControl_AI.Storage.Dtos
         public UserStatus Status { get; set; }
 
         [JsonConverter(typeof(DateTimeUnixJsonConverter))]
-        [JsonPropertyName("nextOperationAvailabilityAtUtc")]
-        public DateTime NextOperationAvailabilityAtUtc {get; set; }
+        [JsonPropertyName("nextMessageToProcessOperationAvailabilityAtUtc")]
+        public DateTime NextMessageToProcessOperationAvailabilityAtUtc { get; set; }
+
+        [JsonConverter(typeof(DateTimeUnixJsonConverter))]
+        [JsonPropertyName("nextImmediateGoalOperationAvailabilityAtUtc")]
+        public DateTime NextImmediateGoalOperationAvailabilityAtUtc { get; set; }
+
+        [JsonPropertyName("aiImmediateGoals")]
+        public List<DaisyGoal> AIImmediateGoals { get; set; } = new();
     }
 }

@@ -7,8 +7,7 @@ using DaisyControl_AI.Core.InferenceServer.Context;
 using DaisyControl_AI.Core.Utils;
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
-using Discord;
-using Discord.WebSocket;
+using DaisyControl_AI.Storage.Dtos.User;
 
 namespace DaisyControl_AI.InferenceNode
 {
@@ -36,6 +35,7 @@ namespace DaisyControl_AI.InferenceNode
                     await Task.Delay(3000);
                 } else
                 {
+                    await Task.Delay(500);
                     Console.WriteLine($"[{nbMessagesProcessed}] messages processed. Fetching a new batch...");
                 }
             }
@@ -43,7 +43,7 @@ namespace DaisyControl_AI.InferenceNode
 
         private static async Task<int> ProcessNextPendingMessage()
         {
-            DaisyControlGetUsersWithUnprocessedMessagesResponseDto result = await usersHttpClient.GetUsersWithUserPendingMessagesAsync(1);
+            DaisyControlGetUsersResponseDto result = await usersHttpClient.GetUsersWithUserPendingMessagesAsync(1);
 
             if (result?.Users == null || !result.Users.Any())
             {
@@ -51,7 +51,7 @@ namespace DaisyControl_AI.InferenceNode
             }
 
             // Reserve the User for processing
-            result.Users[0].NextOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(30);
+            result.Users[0].NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(30);
             result.Users[0].Status = Storage.Dtos.UserStatus.Working;
             if (!await usersHttpClient.UpdateUserAsync(result.Users[0]))
             {
@@ -80,7 +80,7 @@ namespace DaisyControl_AI.InferenceNode
                         continue;
                     }
 
-                    currentUser.Status = Storage.Dtos.UserStatus.Ready;
+                    currentUser.Status = UserStatus.Ready;
                     if (await usersHttpClient.UpdateUserAsync(currentUser))
                     {
                         break;
@@ -120,7 +120,7 @@ namespace DaisyControl_AI.InferenceNode
             if (AIresponse == null)
             {
                 // re-queue
-                daisyMind.DaisyMemory.User.Global.NextOperationAvailabilityAtUtc = DateTime.UtcNow;
+                daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
                 await usersHttpClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global);
                 LoggingManager.LogToFile("491a17c9-500a-42a4-8fe1-3fe885384e8b", $"AIResponse was NULL in response generation to user [{daisyMind.DaisyMemory.User.Global.Id}]. Aborting AI reply. Re-queuing the pending message.");
                 return;
@@ -151,7 +151,22 @@ namespace DaisyControl_AI.InferenceNode
                 },
             });
 
-            daisyMind.DaisyMemory.User.Global.NextOperationAvailabilityAtUtc = DateTime.UtcNow;
+            daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
+
+            // Also update the immediate goal for the AI to soon-ish as we just received a message
+            if ((DateTime.UtcNow - daisyMind.DaisyMemory.User.Global.NextImmediateGoalOperationAvailabilityAtUtc).TotalMinutes >= 5)
+            {
+                if (daisyMind.DaisyMemory.User.Global.MessagesHistory.Count <= 1)
+                {
+                    daisyMind.DaisyMemory.User.Global.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow;
+                } else if (daisyMind.DaisyMemory.User.Global.MessagesHistory.Count <= 5)
+                {
+                    daisyMind.DaisyMemory.User.Global.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow.AddSeconds(30);
+                } else
+                {
+                    daisyMind.DaisyMemory.User.Global.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(5);
+                }
+            }
 
             // Update DaisyMind (in User)
             bool storageUpdateSuccess = await usersHttpClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
@@ -161,7 +176,7 @@ namespace DaisyControl_AI.InferenceNode
                 LoggingManager.LogToFile("faeb2139-a43a-4292-978d-48f1272197ab", $"Message from user [{daisyMind.DaisyMemory.User.Global.Id}] was'nt registered properly in storage. The AI will requeue the message from User [{daisyMind.DaisyMemory.User.Global.UserInfo.Username}].");
 
                 // re-queue
-                daisyMind.DaisyMemory.User.Global.NextOperationAvailabilityAtUtc = DateTime.UtcNow;
+                daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
                 await usersHttpClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global);
                 return;
             } else
@@ -169,83 +184,5 @@ namespace DaisyControl_AI.InferenceNode
                 LoggingManager.LogToFile("18c29818-d646-4e47-9483-35ed05e40593", $"Message from user [{daisyMind.DaisyMemory.User.Global.Id}] was properly processed.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
             }
         }
-
-        //private static async Task ProcessSingleMessage(DaisyControlMessageToBufferRequestDto daisyControlMessageToBufferRequestDto)
-        //{
-
-
-        //    // Get The user
-        //    DaisyControlUserResponseDto user = null;
-        //    try
-        //    {
-        //        user = await usersHttpClient.GetUserAsync(ulong.Parse(daisyControlMessageToBufferRequestDto.UserId)).ConfigureAwait(false);
-
-        //        if (user == null)
-        //        {
-        //            await SetMessageToErrorAsync(daisyControlMessageToBufferRequestDto);
-        //            return;
-        //        }
-        //    } catch (Exception exception)
-        //    {
-        //        await SetMessageToErrorAsync(daisyControlMessageToBufferRequestDto, exception);
-        //        return;
-        //    }
-
-        //    // We want to create the AI "DaisyMind" related to that User. (A User could personalize the bot personality, for instance, so it must be unique for each user)
-        //    DaisyControlMind daisyMind = await DaisyMindFactory.GenerateDaisyMind(user).ConfigureAwait(false);
-
-        //    // Add the new user message to DaisyMind memory
-        //    daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
-        //    daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(daisyControlMessageToBufferRequestDto.Message);
-
-        //    // Query the inference server
-        //    InferenceServerPromptResultResponseDto AIresponse = await InferenceServerQueryer.GenerateStandardAiResponseAsync(ContextBuilder.BuildContext(daisyMind)).ConfigureAwait(false);
-
-        //    if (AIresponse == null)
-        //    {
-        //        await messagesHttpClient.ReservePendingMessages(daisyControlMessageToBufferRequestDto, new TimeSpan(0, 0, 10));
-        //        LoggingManager.LogToFile("4d387af7-e2f4-4c25-bc52-fed5fa63838b", $"AIResponse was NULL in response generation to user [{daisyControlMessageToBufferRequestDto.UserId}]. Aborting AI reply.");
-        //        return;
-        //    }
-
-        //    // Clean AI Response
-        //    // TODO If response was null or badly formatted, try again?
-        //    AIresponse.Text = AIMessageUtils.CleanAIResponse(daisyMind, AIresponse.Text);
-
-        //    // Add the AI response
-        //    daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(new Storage.Dtos.DaisyControlMessage
-        //    {
-        //        ReferentialType = Storage.Dtos.MessageReferentialType.Assistant,
-        //        MessageContent = AIresponse.Text,
-        //        MessageStatus = Storage.Dtos.MessageStatus.Pending,
-        //        MessageSource = Storage.Dtos.MessageSource.Inferenced
-        //    });
-
-        //    // Update DaisyMind (in User)
-        //    bool storageUpdateSuccess = await usersHttpClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
-
-        //    if (!storageUpdateSuccess)
-        //    {
-        //        LoggingManager.LogToFile("2931eed7-e994-4c13-92bc-0711f439ae74", $"Message from user [{daisyMind.DaisyMemory.User.Global.Id}] was'nt registered properly in storage. The AI will requeue the message from User [{daisyMind.DaisyMemory.User.Global.Username}].");
-        //        await messagesHttpClient.ReservePendingMessages(daisyControlMessageToBufferRequestDto, new TimeSpan(0, 0, 1));
-        //        return;
-        //    } else
-        //    {
-        //        LoggingManager.LogToFile("23e0ed2e-1749-4b2e-b1e2-83ac932f4e6d", $"Message from user [{daisyMind.DaisyMemory.User.Global.Id}] was properly registered and queue to be processed by the AI as soon as possible.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
-        //    }
-
-        //    // Remove the pending message
-        //    for (int i = 0; i < 10; ++i)
-        //    {
-        //        if (await messagesHttpClient.CompletePendingMessage(daisyControlMessageToBufferRequestDto))
-        //        {
-        //            return;
-        //        }
-
-        //        await Task.Delay(500);
-        //    }
-
-        //    LoggingManager.LogToFile("5e9609bb-718c-4541-a78f-58c99bbc0f60", $"Message [{daisyControlMessageToBufferRequestDto.Id}] from user [{daisyMind.DaisyMemory.User.Global.Id}] was properly processed, but the pending message couldn't be deleted!");
-        //}
     }
 }

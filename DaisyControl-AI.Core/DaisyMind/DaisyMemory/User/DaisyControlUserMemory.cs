@@ -1,4 +1,4 @@
-﻿using DaisyControl_AI.Storage.Dtos;
+﻿using DaisyControl_AI.Storage.Dtos.User;
 
 namespace DaisyControl_AI.Core.DaisyMind.DaisyMemory.User
 {

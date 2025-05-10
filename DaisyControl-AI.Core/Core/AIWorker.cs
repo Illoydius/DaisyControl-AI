@@ -1,4 +1,5 @@
 ﻿using DaisyControl_AI.Common.Diagnostics;
+using DaisyControl_AI.Core.Core.Decisions.Goals;
 using Microsoft.Extensions.Hosting;
 
 namespace DaisyControl_AI.Core.Core
@@ -16,11 +17,10 @@ namespace DaisyControl_AI.Core.Core
             {
                 try
                 {
-                    // Check if the AI has received new messages from users
-                    await HandleNewMessagesFromUsersAsync();
+                    // Refresh the AI goals
+                    await ReflectOnSelfGoals();
 
-                }
-                catch (Exception exception)
+                } catch (Exception exception)
                 {
                     LoggingManager.LogToFile("129c9062-32de-413f-874b-f86c09eb236a", $"Unhandled exception in {nameof(AIWorker)} main loop.", exception);
                     // TODO: log here
@@ -31,20 +31,17 @@ namespace DaisyControl_AI.Core.Core
             }
         }
 
-        private async Task HandleNewMessagesFromUsersAsync()
+        private async Task ReflectOnSelfGoals()
         {
-            //var HttpRequestClient = new DaisyControlStorageClient();
-            //var usersToProcess = await HttpRequestClient.TryGetUsersWithMessagesToProcessAsync();
+            // TODO: Check for its next goal for each user it knows (ex: enhance knowledge (name, age, career, hobbies,etc), give task, etc)
+            if (await GoalsDecisionManager.ReflectOnImmediateGoalsForNextAvailableUser())
+            {
+                return;
+            }
 
-            //if (usersToProcess?.Users == null || !usersToProcess.Users.Any())
-            //{
-            //    return;
-            //}
+            // TODO: Check for goals around itself (ex: career, holidays, new clothes, new phone, new car, etc)
 
-            //foreach (var user in usersToProcess.Users)
-            //{
-            //    // TODO: process each message, generate the according reply, if required, and send it
-            //}
+            // TODO: Check for long-term goals for each user it knows(ex: change the relationship dynamic, set new rules, etc)
         }
     }
 }

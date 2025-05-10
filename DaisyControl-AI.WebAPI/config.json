@@ -13,7 +13,8 @@
         "UrlGeneratePrompt": "http://localhost:5001/api/v1/generate" // Generate text with a specified prompt
     },
     "storageConfiguration": {
-        "usersWithMessagesToProcessIndexName": "status-nbUnprocessedMessages-index"
+        "usersWithMessagesToProcessIndexName": "status-nextMessageToProcessOperationAvailabilityAtUtc-index",
+        "usersWithOldestImmediateGoalsTimeIndexName": "status-nextImmediateGoalOperationAvailabilityAtUtc-index"
     },
     "logVerbosity": "Verbose"
 }

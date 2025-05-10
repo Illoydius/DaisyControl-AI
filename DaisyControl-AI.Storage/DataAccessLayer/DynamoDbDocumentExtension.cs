@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Amazon.DynamoDBv2.DocumentModel;
-using DaisyControl_AI.Storage.Dtos;
+using DaisyControl_AI.Storage.Dtos.User;
 
 namespace DaisyControl_AI.Storage.DataAccessLayer
 {

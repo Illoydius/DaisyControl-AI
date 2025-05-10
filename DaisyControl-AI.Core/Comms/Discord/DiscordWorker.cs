@@ -1,9 +1,10 @@
-﻿using DaisyControl_AI.Common.Configuration;
+﻿using System.Diagnostics;
+using DaisyControl_AI.Common.Configuration;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
+using DaisyControl_AI.Storage.Dtos.User;
 using Microsoft.Extensions.Hosting;
 
 namespace DaisyControl_AI.Core.Comms.Discord
@@ -15,6 +16,8 @@ namespace DaisyControl_AI.Core.Comms.Discord
     /// </summary>
     public class DiscordWorker : BackgroundService
     {
+        private static Stopwatch typingStopWatchTiming = new();
+        private static Stopwatch sendMessagegStopWatchTiming = new();
         private static DaisyControlStorageUsersClient usersHttpClient = new();
         private readonly IDaisyControlDiscordClient discordClient;
 
@@ -35,6 +38,8 @@ namespace DaisyControl_AI.Core.Comms.Discord
                 return;
             }
 
+            typingStopWatchTiming.Start();
+            sendMessagegStopWatchTiming.Start();
             while (true)
             {
                 try
@@ -48,15 +53,14 @@ namespace DaisyControl_AI.Core.Comms.Discord
                     LoggingManager.LogToFile("8708b99a-0030-419f-9f82-d65c185be004", $"Unhandled exception in discord bot worker main loop.", exception);
                 }
 
-                // TODO: don't wait if we don't need to
-                await Task.Delay(3000);
+                await Task.Delay(500);
             }
         }
 
         /// <summary>
         /// Stop the connection with Discord Gateway.
         /// </summary>
-        public async Task StopAsync()
+        public async Task OnShutdownAsync()
         {
             await discordClient?.StopAsync();
         }
@@ -67,16 +71,23 @@ namespace DaisyControl_AI.Core.Comms.Discord
         private async Task BackgroundWork()
         {
             // Check if there's messages to send
-            await HandleMessagesToSend();
+            if (sendMessagegStopWatchTiming.ElapsedMilliseconds >= 3000)
+            {
+                await HandleMessagesToSend();
+                sendMessagegStopWatchTiming.Restart();
+            }
 
             // Check if there are inference being worked on that is a reply to a Discord user
-            await HandleMessagesToShowTyping();
+            if (typingStopWatchTiming.ElapsedMilliseconds >= 5000)
+            {
+                await HandleMessagesToShowTyping();
+                typingStopWatchTiming.Restart();
+            }
         }
-        
 
         private async Task HandleMessagesToSend()
         {
-            DaisyControlGetUsersWithUnprocessedMessagesResponseDto result = await usersHttpClient.GetUsersWithAIPendingMessagesAsync(1);
+            DaisyControlGetUsersResponseDto result = await usersHttpClient.GetUsersWithAIPendingMessagesAsync(1);
 
             if (result == null || !result.Users.Any())
             {
@@ -84,7 +95,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             }
 
 
-            var validUsers = result.Users.Where(w=> w.MessagesHistory.Any(f => f.SourceInfo.MessageSource == MessageSource.Discord && f.MessageStatus == MessageStatus.Pending && f.ReferentialType == MessageReferentialType.Assistant));
+            var validUsers = result.Users.Where(w => w.MessagesHistory.Any(f => f.SourceInfo.MessageSource == MessageSource.Discord && f.MessageStatus == MessageStatus.Pending && f.ReferentialType == MessageReferentialType.Assistant));
 
             DaisyControlMessage messageToSend = validUsers.FirstOrDefault()?.MessagesHistory.FirstOrDefault(f => f.SourceInfo.MessageSource == MessageSource.Discord && f.MessageStatus == MessageStatus.Pending && f.ReferentialType == MessageReferentialType.Assistant);
 
@@ -94,7 +105,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             }
 
             // Reserve that User
-            result.Users[0].NextOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(1);
+            result.Users[0].NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(1);
             if (!await usersHttpClient.UpdateUserAsync(result.Users[0]))
             {
                 return;
@@ -109,7 +120,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
                     {
                         LoggingManager.LogToFile("7ddd855e-3560-48f9-baea-80ea2dae61b4", $"Sent discord DM message to User [{result.Users[0].Id}].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
                         messageToSend.MessageStatus = MessageStatus.Processed;
-                        result.Users[0].NextOperationAvailabilityAtUtc = DateTime.UtcNow;
+                        result.Users[0].NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
                         if (!await usersHttpClient.UpdateUserAsync(result.Users[0]))
                         {
                             LoggingManager.LogToFile("b9e1376b-107c-4d41-a2c0-4fa601d54bcd", $"Message was sent to User [{result.Users[0].Id}], but the underlying AI message couldn't be set to Processed. The AI message will be re-sent in duplicate.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
@@ -129,18 +140,18 @@ namespace DaisyControl_AI.Core.Comms.Discord
 
         private async Task HandleMessagesToShowTyping()
         {
-            DaisyControlGetUsersOfStatusWorkingResponseDto result = await usersHttpClient.GetWorkingStatusUsersAsync(100);
+            DaisyControlGetUsersResponseDto result = await usersHttpClient.GetWorkingStatusUsersAsync(100);
 
             if (result == null || !result.Users.Any())
             {
                 return;
             }
 
-            var validUsers = result.Users.Where(w=>w.Status == UserStatus.Working && w.NextOperationAvailabilityAtUtc > DateTime.UtcNow && w.MessagesHistory.Any(a=> a.MessageStatus == MessageStatus.Pending && a.SourceInfo.MessageSourceType == MessageSourceType.DirectMessage && a.SourceInfo.MessageSource == MessageSource.Discord)).ToArray();
+            var validUsers = result.Users.Where(w => w.Status == UserStatus.Working && w.NextMessageToProcessOperationAvailabilityAtUtc > DateTime.UtcNow && w.MessagesHistory.Any(a => a.MessageStatus == MessageStatus.Pending && a.SourceInfo.MessageSourceType == MessageSourceType.DirectMessage && a.SourceInfo.MessageSource == MessageSource.Discord)).ToArray();
 
             foreach (DaisyControlUserDto user in validUsers)
             {
-                var message = user.MessagesHistory.FirstOrDefault(f=>f.SourceInfo.MessageSource == MessageSource.Discord && f.SourceInfo.MessageSourceType == MessageSourceType.DirectMessage && f.MessageStatus == MessageStatus.Pending);
+                var message = user.MessagesHistory.FirstOrDefault(f => f.SourceInfo.MessageSource == MessageSource.Discord && f.SourceInfo.MessageSourceType == MessageSourceType.DirectMessage && f.MessageStatus == MessageStatus.Pending);
 
                 if (message == null)
                 {

@@ -82,11 +82,15 @@ namespace DaisyControl_AI.Core.Comms.Discord
             {
                 isConnected = true;
                 await discordSocketClient.SetStatusAsync(UserStatus.Online);
+
+                // TODO: make an activity manager
+                await discordSocketClient.SetActivityAsync(new Game("Waking up...", ActivityType.CustomStatus));
+
                 LoggingManager.LogToFile("66a8d6b1-f8ee-4719-bd51-8db3973aaade", $"Discord bot is connected.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
             };
 
             // Bind discord to a specific socket, this will trigger the Ready event once the bot is connected
-            BindDiscordBot().Wait();
+            BindDiscordBot();
         }
 
         private async Task DiscordPresenceUpdated(SocketUser socketUser, SocketPresence socketPresenceBefore, SocketPresence socketPresenceAfter)
@@ -99,6 +103,8 @@ namespace DaisyControl_AI.Core.Comms.Discord
         /// </summary>
         public async Task StopAsync()
         {
+            isConnected = false;
+            await discordSocketClient.SetStatusAsync(UserStatus.Offline);
             await discordSocketClient?.LogoutAsync();
             await discordSocketClient?.StopAsync();
             discordSocketClient?.Dispose();

@@ -1,13 +1,11 @@
-﻿using System;
-using System.Text.Json;
+﻿using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
 using DaisyControl_AI.Core.DaisyMind;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.Dtos.Response.Users;
+using DaisyControl_AI.Storage.Dtos.User;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.AspNetCore.Mvc;
 using static DaisyControl_AI.Core.Comms.Discord.DaisyControlDiscordClient;
 
 namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
@@ -73,80 +71,30 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
             // Response was correctly received from user. Save the user message to storage
             daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
             daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(userMessage);
-            daisyMind.DaisyMemory.User.Global.NextOperationAvailabilityAtUtc = DateTime.UtcNow;
+            daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
 
-            bool storageUpdateSuccess = await httpRequestClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
+            int retryIterator = 0;
+            while (true)
+            {
+                bool storageUpdateSuccess = await httpRequestClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
 
-            if (!storageUpdateSuccess)
-            {
-                LoggingManager.LogToFile("62ae5779-84b1-4127-b868-22d097d3273a", $"Message from user [{socketUserMessage.Author.Id}] was'nt registered properly in storage. The AI will ignore this message from the User [{socketUserMessage.Author.Username}].");
-                return;
-            } else
-            {
-                LoggingManager.LogToFile("27d04e3a-697b-42d2-835f-f2ff82bf0dbe", $"Message from user [{socketUserMessage.Author.Id}] was properly registered and queued to be processed by the AI as soon as possible.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+                if (!storageUpdateSuccess)
+                {
+                    ++retryIterator;
+
+                    if (retryIterator >= 300)
+                    {
+                        LoggingManager.LogToFile("62ae5779-84b1-4127-b868-22d097d3273a", $"Message from user [{socketUserMessage.Author.Id}] was'nt registered properly in storage. The AI will ignore this message from the User [{socketUserMessage.Author.Username}].");
+                        return;
+                    }
+
+                    await Task.Delay(1000);
+                } else
+                {
+                    LoggingManager.LogToFile("27d04e3a-697b-42d2-835f-f2ff82bf0dbe", $"Message from user [{socketUserMessage.Author.Id}] was properly registered and queued to be processed by the AI as soon as possible.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+                    break;
+                }
             }
-
-            return;
-
-            //InferenceServerPromptResultResponseDto AIresponse = await InferenceServerQueryer.GenerateStandardAiResponseAsync(ContextBuilder.BuildContext(daisyMind)).ConfigureAwait(false);
-
-            //if (AIresponse == null)
-            //{
-            //    LoggingManager.LogToFile("54c42ce3-2c9a-4730-bdda-f0d1e79c9a14", $"AIResponse was NULL in response generation to user [{socketUserMessage.Author.Id}]. Aborting AI reply.");
-            //    return;
-            //}
-
-            //// Clean AI Response
-            //AIresponse.Text = AIMessageUtils.CleanAIResponse(daisyMind, AIresponse.Text);
-
-            //// TODO If response was null or badly formatted, try again?
-
-            //if (AIresponse == null)
-            //{
-            //    LoggingManager.LogToFile("8397ea94-b6aa-4ae4-bd23-f69a81474800", $"AIResponse was empty in response generation to user [{socketUserMessage.Author.Id}] message [{socketUserMessage}].");
-            //    return;
-            //}
-
-            //// TODO: In here, we could save the AI response to the DB in a status "awaiting delivery" and when it's delivered to the user, update the status.
-            //// Send response to user
-            //bool success = await replyToUserCallback(socketUserMessage.Channel.GetChannelType(), socketUserMessage.Channel.Id, socketUserMessage.Author.Id, DaisyControlMessageType.User, AIresponse.Text);
-
-            //if (!success)
-            //{
-            //    LoggingManager.LogToFile("59024fd1-6c43-4e10-880c-1406a28e1741", $"Message wasn't sent to user [{socketUserMessage.Author.Id}]. Aborting the reply handling for this message.");
-            //    return;
-            //}
-
-            //// Add the AI response
-            //daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(new Storage.Dtos.DaisyControlMessage
-            //{
-            //    ReferentialType = Storage.Dtos.MessageReferentialType.Assistant,
-            //    MessageContent = AIresponse.Text,
-            //});
-
-            // Update storage to reflete the new interaction with User
-            //bool storageUpdateSuccess = await HttpRequestClient.UpdateUserAsync(daisyMind.DaisyMemory.User.Global).ConfigureAwait(false);
-
-            //if (!storageUpdateSuccess)
-            //{
-            //    LoggingManager.LogToFile("fa8faec1-1292-43b5-a467-1e7c8a214560", $"Message was sent to user [{socketUserMessage.Author.Id}], but couldn't be saved in storage! The AI will ignore this generated response in its following interaction [{AIresponse.Text}].");
-            //    return;
-            //}
-
-
-
-
-            //if (daisyMind.DaisyMemory.User?.CharacterSheet?.FirstName == null)
-            //{
-            //    // New user, go to onboarding handling
-            //    // We'll add a new LifeEvent here, something like "XXX just sent you the following text message "YYY", build a text message reply, you can use smileys. ...
-
-            //} else
-            //{
-            //    // The user is known, go to the main handling
-
-            //    // TODO
-            //}
         }
 
         public async Task HandleUpdatedMessageAsync(Cacheable<IMessage, ulong> cahedMessages, IMessage previousMessage, SocketMessage updatedMessage, ISocketMessageChannel channel)

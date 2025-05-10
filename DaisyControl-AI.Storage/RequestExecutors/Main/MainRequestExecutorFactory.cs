@@ -26,7 +26,9 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
                     return new DaisyControlGetUsersWithUnprocessedAIMessagesRequestExecutor(daisyControlDal, daisyControlGetUsersWithUnprocessedAIMessagesRequestDto);
                 case DaisyControlGetUsersWithWorkingStatusRequestDto daisyControlGetUsersWithWorkingStatusRequestDto:
                     return new DaisyControlGetUsersWithWorkingStatusRequestExecutor(daisyControlDal, daisyControlGetUsersWithWorkingStatusRequestDto);
-
+                case DaisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto daisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto:
+                    return new DaisyControlGetUsersOldestImmediateGoalsRefreshTimeRequestExecutor(daisyControlDal, daisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto);
+                    
                 default:
                     return null;// TODO : replace with unhandledExc
             }

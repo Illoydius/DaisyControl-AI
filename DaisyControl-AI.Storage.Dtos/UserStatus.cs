@@ -5,7 +5,7 @@ namespace DaisyControl_AI.Storage.Dtos
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum UserStatus
     {
-        Ready = 0,
+        Ready = 0,//Idle
         UserMessagePending = 1,
         AIMessagePending = 2,
         Working = 3,

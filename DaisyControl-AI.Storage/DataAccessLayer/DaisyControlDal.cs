@@ -27,6 +27,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         {
             dynamoDBClient = InitClient();
             InitDatabase().Wait();
+            CleanUpUsersTable().Wait();
         }
 
         private async Task InitDatabase()
@@ -52,7 +53,8 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                         {
                             new AttributeDefinition("userId", ScalarAttributeType.S),
                             new AttributeDefinition("status", ScalarAttributeType.S),
-                            new AttributeDefinition("nextOperationAvailabilityAtUtc", ScalarAttributeType.N),
+                            new AttributeDefinition("nextMessageToProcessOperationAvailabilityAtUtc", ScalarAttributeType.N),
+                            new AttributeDefinition("nextImmediateGoalOperationAvailabilityAtUtc", ScalarAttributeType.N),
                         }, new ProvisionedThroughput
                         {
                             ReadCapacityUnits = 1000,
@@ -67,7 +69,25 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                                     KeySchema = new List<KeySchemaElement>
                                     {
                                         new("status", KeyType.HASH),
-                                        new("nextOperationAvailabilityAtUtc", KeyType.RANGE),
+                                        new("nextMessageToProcessOperationAvailabilityAtUtc", KeyType.RANGE),
+                                    },
+                                    Projection = new Projection
+                                    {
+                                        ProjectionType = ProjectionType.ALL,
+                                    },
+                                    ProvisionedThroughput = new ProvisionedThroughput
+                                    {
+                                        ReadCapacityUnits = 1000,
+                                        WriteCapacityUnits = 1000,
+                                    },
+                                },
+                                new()
+                                {
+                                    IndexName = config.StorageConfiguration.UsersWithOldestImmediateGoalsTimeIndexName,
+                                    KeySchema = new List<KeySchemaElement>
+                                    {
+                                        new("status", KeyType.HASH),
+                                        new("nextImmediateGoalOperationAvailabilityAtUtc", KeyType.RANGE),
                                     },
                                     Projection = new Projection
                                     {
@@ -90,6 +110,43 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                 } finally
                 {
                     cancellationTokenSource.Dispose();
+                }
+            }
+        }
+
+        private async Task CleanUpUsersTable()
+        {
+            using (var cancellationTokenSource = new CancellationTokenSource())
+            {
+                try
+                {
+                    cancellationTokenSource.CancelAfter(NbMsUnreachableDbOnStartup);
+                    ListTablesResponse tables = await dynamoDBClient.ListTablesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+
+                    if (tables.TableNames.Contains(userTableName))
+                    {
+                        LoggingManager.LogToFile("0b16fd3b-c368-49c2-846f-d08207d6f93d", $"Cleaning up Users table...", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
+
+                        // Cleanup users stuck with Working status
+                        var stuckUsers = await TryGetUsersWithWorkingStatusAsync(1000);
+
+                        if (stuckUsers != null)
+                        {
+                            var now = DateTime.UtcNow;
+                            foreach (var user in stuckUsers.Users.Where(w => (now - w.LastModifiedAtUtc).TotalMilliseconds >= 15000))
+                            {
+                                user.Status = UserStatus.Ready;
+                                user.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
+                                var json = JsonSerializer.Serialize(user);
+                                var userAsDto = JsonSerializer.Deserialize<DaisyControlUpdateUserRequestDto>(json);
+                                await TryUpdateUserAsync(userAsDto);
+                            }
+                        }
+                    }
+
+                } catch (Exception e)
+                {
+                    LoggingManager.LogToFile("864b9c16-44a9-455c-a1eb-b6f752702b4b", $"Error. Couldn't clean up Users table when Initializing Database!");
                 }
             }
         }
@@ -287,7 +344,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         }
 
         /// <inheritdoc />
-        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithUserMessagesToProcessAsync(int limitRows)
+        public async Task<DaisyControlGetUsersResponseDto> TryGetUsersWithUserMessagesToProcessAsync(int limitRows)
         {
             var config = CommonConfigurationManager.ReloadConfig();
 
@@ -299,14 +356,14 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     Limit = limitRows,
                     ConsistentRead = false,
                     IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
-                    KeyConditionExpression = "#status = :status AND #nextOperationAvailabilityAtUtc < :nextOperationAvailabilityAtUtc",
+                    KeyConditionExpression = "#status = :status AND #nextMessageToProcessOperationAvailabilityAtUtc < :nextMessageToProcessOperationAvailabilityAtUtc",
                     ExpressionAttributeNames = new Dictionary<string, string>
                     {
                         {
                             "#status", "status"
                         },
                         {
-                            "#nextOperationAvailabilityAtUtc", "nextOperationAvailabilityAtUtc"
+                            "#nextMessageToProcessOperationAvailabilityAtUtc", "nextMessageToProcessOperationAvailabilityAtUtc"
                         },
                     },
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
@@ -315,7 +372,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                             ":status", new AttributeValue { S = UserStatus.UserMessagePending.ToString() }
                         },
                         {
-                            ":nextOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
+                            ":nextMessageToProcessOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
                         },
                     },
                 }).ConfigureAwait(false);
@@ -335,7 +392,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     UsersCollection.Add(user);
                 }
 
-                return new DaisyControlGetUsersWithUnprocessedMessagesResponseDto
+                return new DaisyControlGetUsersResponseDto
                 {
                     Users = UsersCollection.ToArray(),
                 };
@@ -353,7 +410,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         }
 
         /// <inheritdoc />
-        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows)
+        public async Task<DaisyControlGetUsersResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows)
         {
             var config = CommonConfigurationManager.ReloadConfig();
 
@@ -365,14 +422,14 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     Limit = limitRows,
                     ConsistentRead = false,
                     IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
-                    KeyConditionExpression = "#status = :status AND #nextOperationAvailabilityAtUtc < :nextOperationAvailabilityAtUtc",
+                    KeyConditionExpression = "#status = :status AND #nextMessageToProcessOperationAvailabilityAtUtc < :nextMessageToProcessOperationAvailabilityAtUtc",
                     ExpressionAttributeNames = new Dictionary<string, string>
                     {
                         {
                             "#status", "status"
                         },
                         {
-                            "#nextOperationAvailabilityAtUtc", "nextOperationAvailabilityAtUtc"
+                            "#nextMessageToProcessOperationAvailabilityAtUtc", "nextMessageToProcessOperationAvailabilityAtUtc"
                         },
                     },
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
@@ -381,7 +438,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                             ":status", new AttributeValue { S = UserStatus.AIMessagePending.ToString() }
                         },
                         {
-                            ":nextOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
+                            ":nextMessageToProcessOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
                         },
                     },
                 }).ConfigureAwait(false);
@@ -401,7 +458,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     UsersCollection.Add(user);
                 }
 
-                return new DaisyControlGetUsersWithUnprocessedMessagesResponseDto
+                return new DaisyControlGetUsersResponseDto
                 {
                     Users = UsersCollection.ToArray(),
                 };
@@ -419,7 +476,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         }
 
         /// <inheritdoc />
-        public async Task<DaisyControlGetUsersOfStatusWorkingResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows)
+        public async Task<DaisyControlGetUsersResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows)
         {
             var config = CommonConfigurationManager.ReloadConfig();
 
@@ -431,14 +488,14 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     Limit = limitRows,
                     ConsistentRead = false,
                     IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
-                    KeyConditionExpression = "#status = :status AND #nextOperationAvailabilityAtUtc < :nextOperationAvailabilityAtUtc",
+                    KeyConditionExpression = "#status = :status AND #nextMessageToProcessOperationAvailabilityAtUtc < :nextMessageToProcessOperationAvailabilityAtUtc",
                     ExpressionAttributeNames = new Dictionary<string, string>
                     {
                         {
                             "#status", "status"
                         },
                         {
-                            "#nextOperationAvailabilityAtUtc", "nextOperationAvailabilityAtUtc"
+                            "#nextMessageToProcessOperationAvailabilityAtUtc", "nextMessageToProcessOperationAvailabilityAtUtc"
                         },
                     },
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
@@ -447,7 +504,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                             ":status", new AttributeValue { S = UserStatus.Working.ToString() }
                         },
                         {
-                            ":nextOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.AddYears(10).ToUnixTime().ToString() }
+                            ":nextMessageToProcessOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.AddYears(10).ToUnixTime().ToString() }
                         },
                     },
                 }).ConfigureAwait(false);
@@ -467,7 +524,73 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     UsersCollection.Add(user);
                 }
 
-                return new DaisyControlGetUsersOfStatusWorkingResponseDto
+                return new DaisyControlGetUsersResponseDto
+                {
+                    Users = UsersCollection.ToArray(),
+                };
+
+            } catch (ProvisionedThroughputExceededException)
+            {
+                await Task.Delay(NbMsToDelayAfterProvisionException);
+
+                throw;
+            } catch (Exception ex)
+            {
+                // wrap exception
+                throw new CommonException("cbb7ec69-a9a5-4079-b798-a37c31512aa1", $"Unhandled exception when querying database to fetch users with working status. Exception message [{ex.Message}].", ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<DaisyControlGetUsersResponseDto> TryGetUsersWithOldestImmediateGoalsRefreshTimeAsync(int limitRows)
+        {
+            var config = CommonConfigurationManager.ReloadConfig();
+
+            try
+            {
+                var queryResponse = await dynamoDBClient.QueryAsync(new QueryRequest
+                {
+                    TableName = userTableName,
+                    Limit = limitRows,
+                    ConsistentRead = false,
+                    IndexName = config.StorageConfiguration.UsersWithOldestImmediateGoalsTimeIndexName,
+                    KeyConditionExpression = "#status = :status AND #nextImmediateGoalOperationAvailabilityAtUtc < :nextImmediateGoalOperationAvailabilityAtUtc",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        {
+                            "#status", "status"
+                        },
+                        {
+                            "#nextImmediateGoalOperationAvailabilityAtUtc", "nextImmediateGoalOperationAvailabilityAtUtc"
+                        },
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        {
+                            ":status", new AttributeValue { S = UserStatus.Ready.ToString() }
+                        },
+                        {
+                            ":nextImmediateGoalOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
+                        },
+                    },
+                }).ConfigureAwait(false);
+
+                if (queryResponse.Items.Count <= 0)
+                {
+                    return null; // no Items found
+                }
+
+                List<DaisyControlGetUserResponseDto> UsersCollection = new();
+
+                foreach (Dictionary<string, AttributeValue> itemFromDatabase in queryResponse.Items)
+                {
+                    var responseDocument = Document.FromAttributeMap(itemFromDatabase);
+                    var jsonResponse = responseDocument.ToJson();
+                    var user = JsonSerializer.Deserialize<DaisyControlGetUserResponseDto>(jsonResponse);
+                    UsersCollection.Add(user);
+                }
+
+                return new DaisyControlGetUsersResponseDto
                 {
                     Users = UsersCollection.ToArray(),
                 };

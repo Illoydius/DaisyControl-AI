@@ -10,8 +10,9 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         Task<DaisyControlAddUserRequestDto> TryAddUserAsync(DaisyControlAddUserRequestDto daisyControlAddUserDto);
         Task<DaisyControlUpdateUserRequestDto> TryUpdateUserAsync(DaisyControlUpdateUserRequestDto daisyControlUpdateUserDto);
         Task<bool> TryDeleteUserAsync(string userId);
-        Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithUserMessagesToProcessAsync(int limitRows);
-        Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows);
-        Task<DaisyControlGetUsersOfStatusWorkingResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows);
+        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithUserMessagesToProcessAsync(int limitRows);
+        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows);
+        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows);
+        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithOldestImmediateGoalsRefreshTimeAsync(int limitRows);
     }
 }

@@ -115,5 +115,16 @@ namespace DaisyControl_AI.Storage.Controllers
             object response = await workflow.ExecuteAsync(userRequest);
             return response;
         }
+
+        /// <summary>
+        /// Get a chunk of users with the oldest immediate goals refresh time.
+        /// </summary>
+        [HttpGet]
+        [Route("oldestimmediategoals")]
+        public async Task<ActionResult<object>> OldestImmediateGoals(DaisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto userRequest)
+        {
+            object response = await workflow.ExecuteAsync(userRequest);
+            return response;
+        }
     }
 }

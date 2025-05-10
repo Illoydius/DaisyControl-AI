@@ -14,8 +14,10 @@ namespace DaisyControl_AI.Storage
         internal static void ConfigureServices(IServiceCollection services)
         {
             // Workflows
-            services.AddScoped<IWorkflow, MainWorkflow>();
-            services.AddScoped<IDaisyControlDal, DaisyControlDal>();
+            services.AddSingleton<IWorkflow, MainWorkflow>();
+
+            // Data Access Layer
+            services.AddSingleton<IDaisyControlDal, DaisyControlDal>();
         }
     }
 }

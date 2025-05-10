@@ -1,4 +1,5 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
+using DaisyControl_AI.Storage.Dtos.User;
 
 namespace DaisyControl_AI.Storage.Dtos.Requests.Users
 {

@@ -47,7 +47,7 @@ namespace DaisyControl_AI.Common.HttpRequest
 
                 return responseBody;
             } catch (HttpRequestException e)
-            {
+           {
                 LoggingManager.LogToFile("d4b8a37a-c1c1-4a01-a994-db77500854a9", $"POST HttpRequest to url [{url}] failed.", e);
             }
 

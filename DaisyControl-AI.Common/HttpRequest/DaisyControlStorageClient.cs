@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
-using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
+using DaisyControl_AI.Storage.Dtos.User;
 
 namespace DaisyControl_AI.Common.HttpRequest
 {
@@ -90,7 +90,7 @@ namespace DaisyControl_AI.Common.HttpRequest
             }
         }
 
-        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> GetUsersWithUserPendingMessagesAsync(int limitNbUsersToFetch = 3)
+        public async Task<DaisyControlGetUsersResponseDto> GetUsersWithUserPendingMessagesAsync(int limitNbUsersToFetch = 3)
         {
             string url = $"{usersUrl}/unprocessedUsersMessages?maxNbUsersToFetch={limitNbUsersToFetch}";
             var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
@@ -102,16 +102,16 @@ namespace DaisyControl_AI.Common.HttpRequest
 
             try
             {
-                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersWithUnprocessedMessagesResponseDto>(serializedResponse);
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersResponseDto>(serializedResponse);
                 return responseDto;
             } catch (Exception e)
             {
-                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersWithUnprocessedMessagesResponseDto)}] from url [{url}].");
+                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersResponseDto)}] from url [{url}].");
                 return null;
             }
         }
 
-        public async Task<DaisyControlGetUsersWithUnprocessedMessagesResponseDto> GetUsersWithAIPendingMessagesAsync(int limitNbUsersToFetch = 3)
+        public async Task<DaisyControlGetUsersResponseDto> GetUsersWithAIPendingMessagesAsync(int limitNbUsersToFetch = 3)
         {
             string url = $"{usersUrl}/unprocessedAIMessages?maxNbUsersToFetch={limitNbUsersToFetch}";
             var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
@@ -123,16 +123,16 @@ namespace DaisyControl_AI.Common.HttpRequest
 
             try
             {
-                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersWithUnprocessedMessagesResponseDto>(serializedResponse);
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersResponseDto>(serializedResponse);
                 return responseDto;
             } catch (Exception e)
             {
-                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersWithUnprocessedMessagesResponseDto)}] from url [{url}].");
+                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersResponseDto)}] from url [{url}].");
                 return null;
             }
         }
 
-        public async Task<DaisyControlGetUsersOfStatusWorkingResponseDto> GetWorkingStatusUsersAsync(int limitNbUsersToFetch = 3)
+        public async Task<DaisyControlGetUsersResponseDto> GetWorkingStatusUsersAsync(int limitNbUsersToFetch = 3)
         {
             string url = $"{usersUrl}/working?maxNbUsersToFetch={limitNbUsersToFetch}";
             var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
@@ -144,11 +144,32 @@ namespace DaisyControl_AI.Common.HttpRequest
 
             try
             {
-                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersOfStatusWorkingResponseDto>(serializedResponse);
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersResponseDto>(serializedResponse);
                 return responseDto;
             } catch (Exception e)
             {
-                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersOfStatusWorkingResponseDto)}] from url [{url}].");
+                LoggingManager.LogToFile("636232b4-9875-4ced-9e38-1d150d7f7551", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersResponseDto)}] from url [{url}].");
+                return null;
+            }
+        }
+
+        public async Task<DaisyControlGetUsersResponseDto> GetUsersWithOldestImmediateGoalsRefreshTimeAsync(int limitNbUsersToFetch = 3)
+        {
+            string url = $"{usersUrl}/oldestimmediategoals?maxNbUsersToFetch={limitNbUsersToFetch}";
+            var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(serializedResponse))
+            {
+                return null;
+            }
+
+            try
+            {
+                var responseDto = JsonSerializer.Deserialize<DaisyControlGetUsersResponseDto>(serializedResponse);
+                return responseDto;
+            } catch (Exception e)
+            {
+                LoggingManager.LogToFile("e060fd54-0e6c-4dff-b6da-fa60e3e2aabf", $"Failed to deserialize response of type [{typeof(DaisyControlGetUsersResponseDto)}] from url [{url}].");
                 return null;
             }
         }

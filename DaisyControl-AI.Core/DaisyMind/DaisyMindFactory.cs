@@ -1,5 +1,5 @@
 ﻿using DaisyControl_AI.Common.Diagnostics;
-using DaisyControl_AI.Storage.Dtos;
+using DaisyControl_AI.Storage.Dtos.User;
 
 namespace DaisyControl_AI.Core.DaisyMind
 {
@@ -20,7 +20,7 @@ namespace DaisyControl_AI.Core.DaisyMind
                     User = new()
                     {
                         Global = userDto,
-                    }
+                    },
                 }
             };
         }
