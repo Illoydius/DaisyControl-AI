@@ -3,9 +3,10 @@
 namespace DaisyControl_AI.Storage.Dtos.User
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum Genitals
+    public enum Gender
     {
-        Penis = 0,
-        Vagina = 1,
+        Male = 0,
+        Female = 1,
+        Other = 2,
     }
 }

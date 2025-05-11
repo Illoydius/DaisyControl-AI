@@ -3,10 +3,9 @@
 namespace DaisyControl_AI.Storage.Dtos
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum MessageReferentialType
+    public enum GoalValidationType
     {
-        System,
-        User,
-        Assistant,
+        UserInfo,
+        InferenceServerQuery
     }
 }

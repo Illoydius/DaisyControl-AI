@@ -55,6 +55,16 @@ namespace DaisyControl_AI.Core.Utils
                     responseText = responseText.Substring(daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.Length + 2, responseText.Length - daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.Length - 2).TrimStart();
                 }
 
+                if (responseText.ToLowerInvariant().StartsWith($"{daisyMind.DaisyMemory.User.Global.UserInfo.FirstName.ToLowerInvariant()}:"))
+                {
+                    responseText = responseText.Substring(daisyMind.DaisyMemory.User.Global.UserInfo.FirstName.Length + 1, responseText.Length - daisyMind.DaisyMemory.User.Global.UserInfo.FirstName.Length - 1).TrimStart();
+                }
+
+                if (responseText.ToLowerInvariant().StartsWith($"{daisyMind.DaisyMemory.User.Global.UserInfo.FirstName.ToLowerInvariant()} :"))
+                {
+                    responseText = responseText.Substring(daisyMind.DaisyMemory.User.Global.UserInfo.FirstName.Length + 2, responseText.Length - daisyMind.DaisyMemory.User.Global.UserInfo.FirstName.Length - 2).TrimStart();
+                }
+
                 return responseText;
             } catch (Exception e)
             {

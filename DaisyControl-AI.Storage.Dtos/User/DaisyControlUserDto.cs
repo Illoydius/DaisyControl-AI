@@ -6,6 +6,9 @@ namespace DaisyControl_AI.Storage.Dtos.User
 {
     public class DaisyControlUserDto : IStorageDto
     {
+        private List<InferenceTask> _inferenceTasks = new();
+        private int _pendingInferenceTasksCounter = new();
+
         [JsonPropertyName("userId")]
         public string Id { get; set; }
 
@@ -40,5 +43,26 @@ namespace DaisyControl_AI.Storage.Dtos.User
 
         [JsonPropertyName("aiImmediateGoals")]
         public List<DaisyGoal> AIImmediateGoals { get; set; } = new();
+
+        [JsonPropertyName("inferenceTasks")]
+        public List<InferenceTask> InferenceTasks
+        {
+            get { return _inferenceTasks; }
+            set
+            {
+                _inferenceTasks = value;
+            }
+        }
+
+        /// <summary>
+        /// Auto-calculated from InferenceTasks property count.
+        /// </summary>
+        [JsonPropertyName("pendingInferenceTasksCounter")]
+        public int PendingInferenceTasksCounter
+        {
+            get { return _inferenceTasks.Count(); }
+        }
+
+        // Todo: add living with people? who
     }
 }

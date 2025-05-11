@@ -14,5 +14,6 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         Task<DaisyControlGetUsersResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows);
         Task<DaisyControlGetUsersResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows);
         Task<DaisyControlGetUsersResponseDto> TryGetUsersWithOldestImmediateGoalsRefreshTimeAsync(int limitRows);
+        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithPendingInferenceTasksAsync(int limitRows);
     }
 }

@@ -27,7 +27,7 @@ namespace DaisyControl_AI.Core.Core
                 }
 
                 // TODO: don't wait if we don't need to
-                await Task.Delay(1000);
+                await Task.Delay(3000);
             }
         }
 
@@ -37,11 +37,13 @@ namespace DaisyControl_AI.Core.Core
             if (await GoalsDecisionManager.ReflectOnImmediateGoalsForNextAvailableUser())
             {
                 return;
+
+                // TODO: Check for goals around itself (ex: career, holidays, new clothes, new phone, new car, etc)
+
+                // TODO: Check for long-term goals for each user it knows(ex: change the relationship dynamic, set new rules, etc)
             }
 
-            // TODO: Check for goals around itself (ex: career, holidays, new clothes, new phone, new car, etc)
-
-            // TODO: Check for long-term goals for each user it knows(ex: change the relationship dynamic, set new rules, etc)
+            // TODO: If it's been like ~45 sec since the AI sent a message and there's no come back from User, sent an inference task to check if it would make sense to send another message. A follow up of sort.
         }
     }
 }

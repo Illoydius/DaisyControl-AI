@@ -7,7 +7,16 @@ namespace DaisyControl_AI.Storage.Dtos
     /// </summary>
     public class DaisyGoal
     {
-         [JsonPropertyName("promptInjectionGoal")]
+        [JsonPropertyName("promptInjectionGoal")]
         public string PromptInjectionGoal { get; set; }
+
+        [JsonPropertyName("promptGoalValidationInjection")]
+        public string PromptGoalValidationInjection { get; set; }
+
+        [JsonPropertyName("goalMemoryKey")]
+        public string GoalMemoryKey { get; set; }
+
+        [JsonPropertyName("validationType")]
+        public GoalValidationType ValidationType { get; set; }
     }
 }

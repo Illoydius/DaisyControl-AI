@@ -9,5 +9,8 @@ namespace DaisyControl_AI.Common.Configuration.Storage
 
         [JsonPropertyName("usersWithOldestImmediateGoalsTimeIndexName")]
         public string UsersWithOldestImmediateGoalsTimeIndexName { get; set; }
+
+        [JsonPropertyName("usersWithInferenceTasksIndexName")]
+        public string UsersWithInferenceTasksIndexName { get; set; }
     }
 }

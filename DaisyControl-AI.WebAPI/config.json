@@ -14,7 +14,8 @@
     },
     "storageConfiguration": {
         "usersWithMessagesToProcessIndexName": "status-nextMessageToProcessOperationAvailabilityAtUtc-index",
-        "usersWithOldestImmediateGoalsTimeIndexName": "status-nextImmediateGoalOperationAvailabilityAtUtc-index"
+        "usersWithOldestImmediateGoalsTimeIndexName": "status-nextImmediateGoalOperationAvailabilityAtUtc-index",
+        "usersWithInferenceTasksIndexName": "status-pendingInferenceTasksCounter-index"
     },
     "logVerbosity": "Verbose"
 }

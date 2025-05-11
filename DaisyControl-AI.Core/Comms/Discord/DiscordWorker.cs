@@ -2,6 +2,7 @@
 using DaisyControl_AI.Common.Configuration;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
+using DaisyControl_AI.Common.Utils;
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 using DaisyControl_AI.Storage.Dtos.User;
@@ -53,7 +54,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
                     LoggingManager.LogToFile("8708b99a-0030-419f-9f82-d65c185be004", $"Unhandled exception in discord bot worker main loop.", exception);
                 }
 
-                await Task.Delay(500);
+                await Task.Delay(3000);
             }
         }
 
@@ -116,7 +117,8 @@ namespace DaisyControl_AI.Core.Comms.Discord
             switch (messageToSend.SourceInfo.MessageSourceType)
             {
                 case MessageSourceType.DirectMessage:
-                    if (await discordClient.SendDirectMessageAsync(ulong.Parse(messageToSend.SourceInfo.MessageSourceReferential), ulong.Parse(result.Users[0].Id), DaisyControlMessageType.User, messageToSend.MessageContent))
+                    string messageContent = MessagingUtils.RemoveAIThougths(messageToSend.MessageContent);
+                    if (await discordClient.SendDirectMessageAsync(ulong.Parse(messageToSend.SourceInfo.MessageSourceReferential), ulong.Parse(result.Users[0].Id), DaisyControlMessageType.User, messageContent))
                     {
                         LoggingManager.LogToFile("7ddd855e-3560-48f9-baea-80ea2dae61b4", $"Sent discord DM message to User [{result.Users[0].Id}].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
                         messageToSend.MessageStatus = MessageStatus.Processed;

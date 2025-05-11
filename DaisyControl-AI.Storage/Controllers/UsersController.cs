@@ -35,14 +35,7 @@ namespace DaisyControl_AI.Storage.Controllers
         [Route("{userId}")]
         public async Task<ActionResult<object>> GetUser(DaisyControlGetUserRequestDto userRequest)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
-
-            //if (response == null)
-            //{
-            //    return NotFound();
-            //}
-
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
         }
 
         /// <summary>
@@ -51,8 +44,7 @@ namespace DaisyControl_AI.Storage.Controllers
         [HttpPost]
         public async Task<ActionResult<object>> AddUser([FromBody] DaisyControlAddUserRequestDto userRequest)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
         }
 
         /// <summary>
@@ -68,8 +60,7 @@ namespace DaisyControl_AI.Storage.Controllers
                 throw new BadRequestWebApiException("d117c895-568d-4376-a785-466fcc8b6f7b", $"UserId [{UserIdToUpdate}] to update didn't match the provided body UserId [{userRequest.Id}].");
             }
 
-            object response = await workflow.ExecuteAsync(userRequest);
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
         }
 
         /// <summary>
@@ -79,8 +70,7 @@ namespace DaisyControl_AI.Storage.Controllers
         [Route("{userId}")]
         public async Task<ActionResult<object>> DeleteUser(DaisyControlDeleteUserRequestDto userRequest)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
         }
 
         /// <summary>
@@ -90,8 +80,7 @@ namespace DaisyControl_AI.Storage.Controllers
         [Route("unprocessedUsersMessages")]
         public async Task<ActionResult<object>> UsersWithUnprocessedUserMessages(DaisyControlGetUsersWithUnprocessedUserMessagesRequestDto userRequest)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
         }
 
         /// <summary>
@@ -101,8 +90,7 @@ namespace DaisyControl_AI.Storage.Controllers
         [Route("unprocessedAIMessages")]
         public async Task<ActionResult<object>> UsersWithUnprocessedAIMessages(DaisyControlGetUsersWithUnprocessedAIMessagesRequestDto userRequest)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
         }
 
         /// <summary>
@@ -112,8 +100,7 @@ namespace DaisyControl_AI.Storage.Controllers
         [Route("working")]
         public async Task<ActionResult<object>> UsersWithWorkingStatus(DaisyControlGetUsersWithWorkingStatusRequestDto userRequest)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
         }
 
         /// <summary>
@@ -123,8 +110,17 @@ namespace DaisyControl_AI.Storage.Controllers
         [Route("oldestimmediategoals")]
         public async Task<ActionResult<object>> OldestImmediateGoals(DaisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto userRequest)
         {
-            object response = await workflow.ExecuteAsync(userRequest);
-            return response;
+            return await workflow.ExecuteAsync(userRequest);
+        }
+
+        /// <summary>
+        /// Get a chunk of users with the oldest immediate goals refresh time.
+        /// </summary>
+        [HttpGet]
+        [Route("inferencetasks")]
+        public async Task<ActionResult<object>> InferenceTasks(DaisyControlGetUsersWithInferenceTasksRequestDto userRequest)
+        {
+            return await workflow.ExecuteAsync(userRequest);
         }
     }
 }
