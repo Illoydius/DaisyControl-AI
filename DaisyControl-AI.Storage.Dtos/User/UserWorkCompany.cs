@@ -4,10 +4,10 @@ namespace DaisyControl_AI.Storage.Dtos.User
 {
     public class UserWorkCompany
     {
-        [JsonPropertyName("name")]
+        [JsonPropertyName("companyName")]
         public string Name { get; set; }
 
-        [JsonPropertyName("address")]
+        [JsonPropertyName("companyAddress")]
         public string Address { get; set; }
     }
 }

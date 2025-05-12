@@ -19,7 +19,7 @@ namespace DaisyControl_AI.Storage.Dtos.User
         public DaisyControlUserInfo UserInfo { get; set; }
 
         [JsonPropertyName("messagesHistory")]
-        public List<DaisyControlMessage> MessagesHistory { get; set; }
+        public List<DaisyControlMessage> MessagesHistory { get; set; } = new();
 
         [JsonPropertyName("aiGlobal")]
         public DaisyControlStorageMind AIGlobal { get; set; } = new();

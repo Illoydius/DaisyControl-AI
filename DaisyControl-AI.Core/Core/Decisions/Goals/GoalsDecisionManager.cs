@@ -70,12 +70,16 @@ namespace DaisyControl_AI.Core.Core.Decisions.Goals
                     }
                 }
 
+                int nbDaysSinceMetUser = (int)Math.Floor((DateTime.UtcNow - userToProcess.CreatedAtUtc).TotalDays);
+
                 // After validating current goals, if we don't have much goals left, we can generate some more
                 bool lowFamiliarity = userToProcess.UserInfo.GetFamiliarityPercentage() <= 15;
                 int maxImmediateGoals = lowFamiliarity ? 10 : 3;
+
+                // UserInfo Goals
                 if (userToProcess.AIImmediateGoals.Count <= maxImmediateGoals)
                 {
-                    int nbImmediateGoalsToGenerate = random.Next(1, 6);
+                    int nbImmediateGoalsToGenerate = nbDaysSinceMetUser < 1 ? random.Next(1, 5) : random.Next(1, 2);
 
                     if (lowFamiliarity)
                     {
@@ -95,12 +99,35 @@ namespace DaisyControl_AI.Core.Core.Decisions.Goals
                     if (userToProcess.AIImmediateGoals.Count < nbImmediateGoalsToGenerate)
                     {
                         // TODO: generate more immediate goals
+                        // If Daisy met you for enough time to consider trying to get some more sensitive informations out of the user
+                        if (nbDaysSinceMetUser > 3)
+                        {
+                            List<DaisyGoal> basicSensitiveUserInfoGoals = await GenerateBasicSensitiveUserInfoImmediateGoals(daisyMind, 1);
+
+                            if (BasicUserInfoGoals.Any())
+                            {
+                                userToProcess.AIImmediateGoals.AddRange(BasicUserInfoGoals.Where(w => !userToProcess.AIImmediateGoals.Select(s => s.GoalMemoryKey).Contains(w.GoalMemoryKey)).ToArray());
+                            }
+
+                            if (userToProcess.AIImmediateGoals.Count < nbImmediateGoalsToGenerate && nbDaysSinceMetUser > 10)
+                            {
+                                List<DaisyGoal> sensitiveUserInfoGoals = await GenerateSensitiveUserInfoImmediateGoals(daisyMind, 1);
+
+                                if (BasicUserInfoGoals.Any())
+                                {
+                                    userToProcess.AIImmediateGoals.AddRange(sensitiveUserInfoGoals.Where(w => !userToProcess.AIImmediateGoals.Select(s => s.GoalMemoryKey).Contains(w.GoalMemoryKey)).ToArray());
+                                }
+                            }
+                        }
                     }
                 }
 
                 LoggingManager.LogToFile("f2913016-3a0a-4625-af53-e941f660b26f", $"User linked AI has [{userToProcess.AIImmediateGoals.Count}] immediate goals.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
 
-                if ((DateTime.UtcNow - userToProcess.MessagesHistory.Max(m => m.CreatedAtUtc)).TotalMinutes <= 5)
+                if (userToProcess.UserInfo.GetFamiliarityPercentage() <= 15)
+                {
+                    userToProcess.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(2);
+                } else if ((DateTime.UtcNow - userToProcess.MessagesHistory.Max(m => m.CreatedAtUtc)).TotalMinutes <= 5)
                 {
                     // Set the next ReflectOnImmediateGoalsForNextAvailableUser for this user to the next 5 min, as this is a live conversation with the user
                     userToProcess.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(5);
@@ -156,25 +183,6 @@ namespace DaisyControl_AI.Core.Core.Decisions.Goals
                 return goals;
             }
 
-            // Last Name
-            if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.LastName) || daisyMind.DaisyMemory.User.Global.UserInfo.LastName.ToLowerInvariant().Trim() == "unknown")
-            {
-                DaisyGoal goal = new()
-                {
-                    ValidationType = GoalValidationType.UserInfo,
-                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.LastName).ToLowerInvariant(),
-                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what {{{{user}}}}'s last name is. Be subtle about it as most people don't want to give their last name easily. You may use your cunning nature to get that information. You could for instance give your own last name to {{{{user}}}}, to incite them to give your theirs. \"Uknown\" is not a valid name.",
-                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find {{{{user}}}}'s last name. Ignore {{{{user}}}} first name. \"Uknown\" is not a valid name.",
-                };
-
-                goals.Add(goal);
-            }
-
-            if (goals.Count >= maxElements)
-            {
-                return goals;
-            }
-
             // Age
             if (daisyMind.DaisyMemory.User.Global.UserInfo.Age == null)
             {
@@ -213,6 +221,28 @@ namespace DaisyControl_AI.Core.Core.Decisions.Goals
                 return goals;
             }
 
+            // Location Country
+            if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.Location.CountryName))
+            {
+                var goal = new DaisyGoal
+                {
+                    ValidationType = GoalValidationType.UserInfo,
+                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.Location.CountryName).ToLowerInvariant(),
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out in what country {{{{user}}}} lives. You're looking for the country name.",
+                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find the name of the country in which {{{{user}}}} lives.",
+                };
+
+                goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
+            }
+
+            // Hobbies
+            // TODO
+
             // Genitals
             if (daisyMind.DaisyMemory.User.Global.UserInfo.Age == null)
             {
@@ -232,18 +262,153 @@ namespace DaisyControl_AI.Core.Core.Decisions.Goals
                 return goals;
             }
 
-            // Work
+            return goals;
+        }
+
+        // Make sure to match it with GoalsDecisionValidator.cs
+        private static async Task<List<DaisyGoal>> GenerateBasicSensitiveUserInfoImmediateGoals(DaisyControlMind daisyMind, int maxElements)
+        {
+            List<DaisyGoal> goals = new();
+
+            // Email
+            if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.Email))
+            {
+                DaisyGoal goal = new()
+                {
+                    ValidationType = GoalValidationType.UserInfo,
+                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.Email).ToLowerInvariant(),
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what {{{{user}}}} email is. You could for instance ask for {{{{user}}}} email to be able to forward other emails, send documents, etc. Be creative, but remains logical and realistic so {{{{user}}}} will be tempted to give you their email.",
+                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find {{{{user}}}}'s last name. Ignore {{{{user}}}} first name. \"Uknown\" is not a valid name.",
+                };
+
+                goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
+            }
+
+            // Last Name
+            if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.LastName) || daisyMind.DaisyMemory.User.Global.UserInfo.LastName.ToLowerInvariant().Trim() == "unknown")
+            {
+                DaisyGoal goal = new()
+                {
+                    ValidationType = GoalValidationType.UserInfo,
+                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.LastName).ToLowerInvariant(),
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what {{{{user}}}}'s last name is. Be subtle about it as most people don't want to give their last name easily. You may use your cunning nature to get that information. You could for instance give your own last name to {{{{user}}}}, to incite them to give your theirs. \"Uknown\" is not a valid name.",
+                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find {{{{user}}}}'s last name. Ignore {{{{user}}}} first name. \"Uknown\" is not a valid name.",
+                };
+
+                goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
+            }
+
+            // Work title
             if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkTitle))
             {
                 var goal = new DaisyGoal
                 {
                     ValidationType = GoalValidationType.UserInfo,
                     GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkTitle).ToLowerInvariant(),
-                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what {{{{user}}}} does for work. Is he an employee? Where does he work? What does he do? What is the title of his job (accountant,cashier,software engineer,etc)?",
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what {{{{user}}}} do for work. Is he an employee? Where does he work? What does he do? What is the title of his job (accountant,cashier,software engineer,etc)?",
                     PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find {{{{user}}}}'s work title (ex: accountant,cashier,software engineer,...).",
                 };
 
                 goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
+            }
+
+            // Work Description Summary
+            if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkDescriptionSummary))
+            {
+                DaisyGoal goal = new()
+                {
+                    ValidationType = GoalValidationType.UserInfo,
+                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkDescriptionSummary).ToLowerInvariant(),
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what {{{{user}}}} do for work. What does his work entails? You want to know a description of what {{{{user}}}} does in a typical day, what tasks {{{{user}}}} do.",
+                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find a description of {{{{user}}}}'s work tasks. Create a summary of the work {{{{user}}}} does in a typical day.",
+                };
+
+                goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
+            }
+
+            // Company Name
+            if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.Company.Name))
+            {
+                DaisyGoal goal = new()
+                {
+                    ValidationType = GoalValidationType.UserInfo,
+                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.Company.Name).ToLowerInvariant(),
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what the name of the company {{{{user}}}} is working for. You only know that {{{{user}}}} is working as a {daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkTitle}, but not for what company. Be very subtle about it as most people don't want to give that information easily. Use your cunning nature to ease the conversation in that direction.",
+                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find the name of the company {{{{user}}}} works for.",
+                };
+
+                goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
+            }
+
+            return goals;
+        }
+
+        // Make sure to match it with GoalsDecisionValidator.cs
+        private static async Task<List<DaisyGoal>> GenerateSensitiveUserInfoImmediateGoals(DaisyControlMind daisyMind, int maxElements)
+        {
+            List<DaisyGoal> goals = new();
+
+            // Annual Salary
+            if (daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.AnnualSalary == null)
+            {
+                DaisyGoal goal = new()
+                {
+                    ValidationType = GoalValidationType.UserInfo,
+                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.AnnualSalary).ToLowerInvariant(),
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what is {{{{user}}}} annual salary. You know that {{{{user}}}} is working as a {daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkTitle}. Be very subtle about it as most people don't want to give that information easily. Use your cunning nature to ease the conversation in that direction.",
+                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find {{{{user}}}}'s annual salary.",
+                };
+
+                goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
+            }
+
+            // Company Address
+            if (string.IsNullOrWhiteSpace(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.Company.Name))
+            {
+                DaisyGoal goal = new()
+                {
+                    ValidationType = GoalValidationType.UserInfo,
+                    GoalMemoryKey = nameof(daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.Company.Address).ToLowerInvariant(),
+                    PromptInjectionGoal = $"One of {{{{char}}}} goal for the current conversation with {{{{user}}}} is to find out what is the address of the company {{{{user}}}} is working for. You only know that {{{{user}}}} is working as a {daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkTitle} for {daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.Company.Address}, but not the address of where {{{{user}}}} works. Be very subtle about it as most people don't want to give that information easily. Use your cunning nature to ease the conversation in that direction.",
+                    PromptGoalValidationInjection = $"Analyze the conversation between {{{{char}}}} and {{{{user}}}} to find the address of the company {{{{user}}}} works for.",
+                };
+
+                goals.Add(goal);
+            }
+
+            if (goals.Count >= maxElements)
+            {
+                return goals;
             }
 
             return goals;

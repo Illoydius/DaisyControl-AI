@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
+using DaisyControl_AI.Common.Utils;
+using DaisyControl_AI.Core.Core.Decisions.Goals;
 using DaisyControl_AI.Core.DaisyMind;
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.User;
@@ -31,15 +33,15 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                     continue;
                 }
 
+                if (user == null)
+                {
+                    return null;
+                }
+
                 if (user.Status != Storage.Dtos.UserStatus.Ready)
                 {
                     await Task.Delay(msToWaitBetweenTry);
                     continue;
-                }
-
-                if (user == null)
-                {
-                    return null;
                 }
 
                 // Reserve the User for processing
@@ -87,6 +89,10 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                         LoggingManager.LogToFile("84f8333a-35a4-4ac2-8ec3-172018e0f2a5", $"Discord bot couldn't create user [{socketUserMessage.Author.Id}]. The message from this user will be ignored.");
                         return;
                     }
+
+                    // Generate some goals BEFORE processing the new message
+                    await GoalsDecisionManager.ReflectOnImmediateGoalsForNextAvailableUser();
+                    user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 120);
                 }
 
                 // Next, we want to create the AI "DaisyMind" related to that User. (A User could personalize the bot personality, for instance, so it's unique for each user)
@@ -97,7 +103,7 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                 {
                     CreatedAtUtc = DateTime.UtcNow,
                     ReferentialType = MessageReferentialType.User,
-                    MessageContent = $"{socketUserMessage.ToString()}",
+                    MessageContent = MessagingUtils.ToDaisyMessage($"{socketUserMessage.ToString()}", ""),
                     MessageStatus = MessageStatus.Pending,
                     SourceInfo = new()
                     {
@@ -111,6 +117,7 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                 daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
                 daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(userMessage);
                 daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
+
             } finally
             {
                 int retryIterator = 0;

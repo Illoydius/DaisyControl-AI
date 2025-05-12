@@ -5,7 +5,7 @@ namespace DaisyControl_AI.Storage.Dtos.User
     public class DaisyControlUserInfo
     {
         [JsonPropertyName("username")]
-        public string Username { get; set; }
+        public string Username { get; set; } // Discord username
 
         [JsonPropertyName("firstName")]
         public string FirstName { get; set; } = "Unknown";
@@ -37,47 +37,65 @@ namespace DaisyControl_AI.Storage.Dtos.User
 
             if (this.FirstName.ToLowerInvariant() != "unknown")
             {
-                familiarity += 2;
+                familiarity++;
             }
 
             if (this.LastName.ToLowerInvariant() != "unknown")
             {
-                familiarity += 3;
-            }
-
-            if (this.Genitals != null)
-            {
-                 familiarity += 5;
-            }
-
-            if (this.Age != null)
-            {
-                familiarity += 5;
+                familiarity++;
             }
 
             if (!string.IsNullOrWhiteSpace(this.Email))
             {
-                familiarity += 2;
+                familiarity++;
             }
 
+            if (this.Age != null)
+            {
+                familiarity++;
+            }
+
+            if (this.Gender != null)
+            {
+                 familiarity++;
+            }
+
+            if (this.Genitals != null)
+            {
+                 familiarity++;
+            }
+
+            // Location
+            if (!string.IsNullOrWhiteSpace(this.Location.CountryName))
+            {
+                familiarity++;
+            }
+
+            // WorkOccupation
             if (!string.IsNullOrWhiteSpace(this.WorkOccupation.WorkTitle))
             {
-                familiarity += 5;
+                familiarity++;
             }
 
             if (this.WorkOccupation.AnnualSalary != null)
             {
-                familiarity += 3;
+                familiarity++;
             }
 
+            // Company
             if (!string.IsNullOrWhiteSpace(this.WorkOccupation.Company.Name))
             {
-                familiarity += 3;
+                familiarity++;
             }
 
             if (!string.IsNullOrWhiteSpace(this.WorkOccupation.Company.Address))
             {
-                familiarity += 5;
+                familiarity++;
+            }
+
+            if (!string.IsNullOrWhiteSpace(this.WorkOccupation.WorkDescriptionSummary))
+            {
+                familiarity++;
             }
 
             // TODO: if AI was in past events with User, add familiarity

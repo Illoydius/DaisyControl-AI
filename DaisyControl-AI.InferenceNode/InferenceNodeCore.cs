@@ -2,6 +2,7 @@
 using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
+using DaisyControl_AI.Common.Utils;
 using DaisyControl_AI.Common.Utils.MiscUtils;
 using DaisyControl_AI.Core.DaisyMind;
 using DaisyControl_AI.Core.InferenceServer;
@@ -105,12 +106,6 @@ namespace DaisyControl_AI.InferenceNode
                     continue;
                 }
 
-                if (currentUser.Status != Storage.Dtos.UserStatus.Ready)
-                {
-                    await Task.Delay(500);
-                    continue;
-                }
-
                 currentUser.Status = Storage.Dtos.UserStatus.Ready;
                 if (await usersHttpClient.UpdateUserAsync(currentUser))
                 {
@@ -183,6 +178,8 @@ namespace DaisyControl_AI.InferenceNode
 
             string queryJsonResult = await inferenceServerQueryerExecutor.Execute();
 
+
+
             if (!await inferenceServerQueryerExecutor.SaveResult(queryJsonResult))
             {
                 LoggingManager.LogToFile("86064c58-e91b-4329-bc5a-748db141ad49", $"Couldn't save AI response after executing inferenceTask against inference server. Task=[{JsonSerializer.Serialize(inferenceTaskToValidate)}], reply=[{queryJsonResult}]. Skipping.");
@@ -227,7 +224,7 @@ namespace DaisyControl_AI.InferenceNode
             return 1;
         }
 
-        private static async Task<DaisyControlUserDto> ProcessNextPendingMessage(DaisyControlUserDto daisyControlUserDto)
+        private static async Task<DaisyControlUserDto> ProcessNextPendingMessage(DaisyControlUserDto daisyControlUserDto, bool retry = true)
         {
             // The User is locked to us for the next 30 min
             // We want to create the AI "DaisyMind" related to that User. (A User could personalize the bot personality, for instance, so it's unique for each user)
@@ -265,6 +262,27 @@ namespace DaisyControl_AI.InferenceNode
             // Clean AI Response
             // TODO If response was null or badly formatted, try again?
             AIresponse.Text = AIMessageUtils.CleanAIResponse(daisyMind, AIresponse.Text);
+            AIresponse.Text = StringUtils.GetJsonFromString(AIresponse.Text);
+
+            // Check if the AI response is the right format
+            try
+            {
+                JsonSerializer.Deserialize<DaisyMessage>(AIresponse.Text);
+            } catch (Exception e)
+            {
+                if (retry)
+                {
+                    LoggingManager.LogToFile("4d6d45aa-b958-477a-977d-9110a4dd3a4d", "AI reply is in an incorrect format. Retrying...");
+                    return await ProcessNextPendingMessage(daisyControlUserDto, false);
+                }
+
+                LoggingManager.LogToFile("5c97dd19-3485-499a-9b6a-10dcffd3d0b7", $"AI reply is in an incorrect format! The response will be kept as-is: [{AIresponse.Text}].");
+
+                AIresponse.Text = JsonSerializer.Serialize(new DaisyMessage
+                {
+                    Message = AIresponse.Text,
+                });
+            }
 
             // Clean up pending messages to set as processed
             foreach (var message in daisyMind.DaisyMemory.User.Global.MessagesHistory.Where(w => w.MessageStatus == MessageStatus.Pending))

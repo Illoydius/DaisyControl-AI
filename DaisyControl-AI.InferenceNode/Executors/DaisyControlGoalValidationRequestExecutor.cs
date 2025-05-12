@@ -42,6 +42,7 @@ namespace DaisyControl_AI.InferenceNode.Executors
                 }
 
                 var jsonAdapted = queryJsonResult.ToLowerInvariant().Trim();
+                jsonAdapted = StringUtils.GetJsonFromString(jsonAdapted);
                 jsonAdapted = queryJsonResult.Replace($"\"{inferenceTask.KeyValue}\"", "\"value\"");
 
                 string pattern = @"\{[\s\S]*?\}";
@@ -54,12 +55,6 @@ namespace DaisyControl_AI.InferenceNode.Executors
                 }
 
                 var result = JsonSerializer.Deserialize<ExecutorQueryResult>(match.Groups[0].Value);
-
-                if (result == null || string.IsNullOrWhiteSpace(result.Value))
-                {
-                    return false;
-                }
-
                 return await SaveMemoryUpdate(inferenceTask.KeyType, inferenceTask.KeyValue, result.Value);
 
             } catch (Exception e)
@@ -83,7 +78,16 @@ namespace DaisyControl_AI.InferenceNode.Executors
 
         private async Task<bool> SaveGoalMemoryUpdate(string keyValue, string value)
         {
-            if (string.IsNullOrWhiteSpace(value) || value.ToLowerInvariant() == "unknown")
+            string[] incorrectValues =
+            {
+                "unkown",
+                "null",
+                "empty",
+                "not found",
+                "undefined",
+            };
+
+            if (string.IsNullOrWhiteSpace(value) || incorrectValues.Contains(value.ToLowerInvariant().Trim()))
             {
                 return false;
             }

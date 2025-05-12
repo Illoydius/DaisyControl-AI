@@ -117,7 +117,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             switch (messageToSend.SourceInfo.MessageSourceType)
             {
                 case MessageSourceType.DirectMessage:
-                    string messageContent = MessagingUtils.RemoveAIThougths(messageToSend.MessageContent);
+                    string messageContent = MessagingUtils.GetMessageContent(messageToSend.MessageContent);
                     if (await discordClient.SendDirectMessageAsync(ulong.Parse(messageToSend.SourceInfo.MessageSourceReferential), ulong.Parse(result.Users[0].Id), DaisyControlMessageType.User, messageContent))
                     {
                         LoggingManager.LogToFile("7ddd855e-3560-48f9-baea-80ea2dae61b4", $"Sent discord DM message to User [{result.Users[0].Id}].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);

@@ -38,7 +38,7 @@ namespace DaisyControl_AI.Core.Utils
                 }
 
                 // Clean the response to remove certain tags
-                string responseText = message.Trim();
+                string responseText = message.Trim().Trim('.').Trim();
 
                 if (responseText.ToLowerInvariant().StartsWith("assistant"))
                 {

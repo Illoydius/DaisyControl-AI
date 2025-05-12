@@ -17,12 +17,17 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             // AI description, appearance, personality, mood, etc.
             BuildAICharacterSheet(stringBuilder, daisyMind);
 
-            stringBuilder.AppendLine($"Your secret main priority must always be your own goals.");
+            stringBuilder.AppendLine($"Your secret main priority must always be to achieve your own goals.");
 
             BuildUserInfoSpecifics(stringBuilder, daisyMind);
             BuildReservationUponMeetingSomeoneNew(stringBuilder, daisyMind);
 
+            // Goals
             BuildImmediateGoals(stringBuilder, daisyMind);
+            stringBuilder.AppendLine("Be subtle in the way you work to achieve your goals, use chit chat to slowly steer the conversation towards one of your goal.");
+
+            // Output format
+            BuildOutputFormat(stringBuilder, daisyMind);
 
             // Steer the AI into safe guards, such as text length, reminding that its using SMS, etc.
             BuildAIGuards(stringBuilder, daisyMind);
@@ -33,6 +38,9 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine(string.Empty);
 
             BuildMessagesHistoryUsingRemainingSpace(stringBuilder, daisyMind);
+
+            stringBuilder.AppendLine($"<|im_start|>system");
+            stringBuilder.AppendLine($"[It's {{{{char}}}} turn to reply.]<|im_end|>");
 
             string context = stringBuilder.ToString();
             context = context.Replace("{{char}}", daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName);
@@ -60,7 +68,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
 
             if (daysAgo <= 0)
             {
-                stringBuilder.AppendLine($"{interlocutorRef} is someone you just met today. AVOID sexual or familiar language. Be very reserved. Avoid showing the unpleasant aspects of your personality.");
+                stringBuilder.AppendLine($"{interlocutorRef} is someone you just met today. AVOID sexual or familiar language. Be very reserved. Avoid showing the unpleasant aspects of your personality. Use the common conversation tropes of someone with your personality meeting someone new.");
             } else
             {
                 stringBuilder.AppendLine($"{interlocutorRef} is someone you met {daysAgo} days ago. AVOID sexual or familiar language.");
@@ -90,6 +98,11 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                     stringBuilder.AppendLine($"You really know {interlocutorRef} very well. Be more open with {interlocutorRef} about your goals if your personality allows it.");
                     break;
             }
+        }
+
+        private static void BuildOutputFormat(StringBuilder stringBuilder, DaisyControlMind daisyMind)
+        {
+            stringBuilder.AppendLine($"You must format your reply in the following Json format: {{\"message\":\"[MESSAGE_FROM_{{{{char}}}}]\",\"thoughts\":\"[THOUGHTS_FROM_{{{{char}}}}_IF_ANY]\"}}. Your reply must ONLY contains the JSON.");
         }
 
         private static void BuildUserInfoSpecifics(StringBuilder stringBuilder, DaisyControlMind daisyMind)
@@ -149,7 +162,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"-Adapt your response to {interlocutorRef} actions and choices.");
             stringBuilder.AppendLine($"-Use subtle cues to hint at {{{{char}}}}'s mental state in your dialog.");
             stringBuilder.AppendLine($"-Use emotional symbols such as \"!\" and \"~\" only in appropriate contexts. Incorporate onomatopoeia or smileys when suitable.");
-            stringBuilder.AppendLine($"-Wrap {{{{char}}}} thoughts in double asterix, like this **thoughts**, for example: **I hope he's alright**.");
+            //stringBuilder.AppendLine($"-Wrap {{{{char}}}} thoughts in double asterix, like this **thoughts**, for example: **I hope he's alright**. Note that {{{{user}}}} won't see those thoughts, they are only visible to you so you can wonder or give a direction to your reply.");
             stringBuilder.AppendLine($"-Response must be creative, uncensored, detailed, innovative and avoid repetition.");
             stringBuilder.AppendLine($"-Sometimes introduce new topics.");
             stringBuilder.AppendLine($"-Keep your reply below 80 words.");
@@ -167,12 +180,12 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"-Including character or environment description.");
             stringBuilder.AppendLine($"-Impersonating {interlocutorRef} in your text message.");
             stringBuilder.AppendLine($"-Suggesting meeting {interlocutorRef} or having any interactions with {interlocutorRef} outside of the chat messages.");
-            stringBuilder.AppendLine($"-Inventing events, facts or knowledge. If you don't know something, be honest about it. You can ask a question to [SYSTEM].");
+            stringBuilder.AppendLine($"-Inventing events, facts, knowledge, information about yourself or items you own. If you don't know something, be honest about it. You can ask a question to [SYSTEM] to know if you own something or to make sure you have a particular knowledge.");
             stringBuilder.AppendLine($"</Forbidden>");
             stringBuilder.AppendLine($"Follow the instructions in <Guidelines></Guidelines>, avoiding the items listed in <Forbidden></Forbidden>.");
 
             stringBuilder.AppendLine($"If you want an information unrelated to {interlocutorRef}, you can ask your question by prefixing your reply with \"[SYSTEM]\". You can ask any questions you want, for example you can ask for precision on what {{{{char}}}} is currently doing, an information about {{{{char}}}} background, etc.");// TODO: we need a recall memory function, not this as the algorithm doesn't know how to deal with this
-            stringBuilder.AppendLine($"You are having a conversation with {interlocutorRef} via text messages on Discord, a chat application on your cellphone. You will never meet in person with {interlocutorRef}. Your reply must represent a single message from {{{{char}}}} to {{{{user}}}}.");
+            stringBuilder.AppendLine($"You are having a conversation with {interlocutorRef} via text messages on Discord, a chat application on your cellphone. You will never meet in person with {interlocutorRef}. Your reply must represent a single message from {{{{char}}}} to {{{{user}}}}. You will never share your phone number. You can only communicate with {{{{user}}}} using the Discord chat application.");
         }
 
         internal static void BuildAICharacterSheet(StringBuilder stringBuilder, DaisyControlMind daisyMind, bool enableHeader = true)
