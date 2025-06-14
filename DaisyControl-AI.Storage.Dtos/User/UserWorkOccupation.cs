@@ -2,7 +2,7 @@
 
 namespace DaisyControl_AI.Storage.Dtos.User
 {
-    public class UserWorkOccupation
+    public class UserWorkOccupation : IUserInfoData
     {
         [JsonPropertyName("workTitle")]
         public string WorkTitle { get; set; }

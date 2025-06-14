@@ -95,6 +95,11 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                     user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 120);
                 }
 
+                if (user == null)
+                {
+                    return;
+                }
+
                 // Next, we want to create the AI "DaisyMind" related to that User. (A User could personalize the bot personality, for instance, so it's unique for each user)
                 daisyMind = await DaisyMindFactory.GenerateDaisyMind(user).ConfigureAwait(false);
 
@@ -124,24 +129,28 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                 while (true)
                 {
                     var userToUpdate = daisyMind?.DaisyMemory.User.Global ?? user;
-                    userToUpdate.Status = Storage.Dtos.UserStatus.Ready;
-                    bool storageUpdateSuccess = await usersHttpClient.UpdateUserAsync(userToUpdate).ConfigureAwait(false);
 
-                    if (!storageUpdateSuccess)
+                    if (userToUpdate != null)
                     {
-                        ++retryIterator;
+                        userToUpdate.Status = Storage.Dtos.UserStatus.Ready;
+                        bool storageUpdateSuccess = await usersHttpClient.UpdateUserAsync(userToUpdate).ConfigureAwait(false);
 
-                        if (retryIterator >= 300)
+                        if (!storageUpdateSuccess)
                         {
-                            LoggingManager.LogToFile("62ae5779-84b1-4127-b868-22d097d3273a", $"Message from user [{socketUserMessage.Author.Id}] was'nt registered properly in storage. The AI will ignore this message from the User [{socketUserMessage.Author.Username}].");
+                            ++retryIterator;
+
+                            if (retryIterator >= 300)
+                            {
+                                LoggingManager.LogToFile("62ae5779-84b1-4127-b868-22d097d3273a", $"Message from user [{socketUserMessage.Author.Id}] was'nt registered properly in storage. The AI will ignore this message from the User [{socketUserMessage.Author.Username}].");
+                                break;
+                            }
+
+                            await Task.Delay(1000);
+                        } else
+                        {
+                            LoggingManager.LogToFile("27d04e3a-697b-42d2-835f-f2ff82bf0dbe", $"Message from user [{socketUserMessage.Author.Id}] was properly registered and queued to be processed by the AI as soon as possible.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
                             break;
                         }
-
-                        await Task.Delay(1000);
-                    } else
-                    {
-                        LoggingManager.LogToFile("27d04e3a-697b-42d2-835f-f2ff82bf0dbe", $"Message from user [{socketUserMessage.Author.Id}] was properly registered and queued to be processed by the AI as soon as possible.", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
-                        break;
                     }
                 }
             }

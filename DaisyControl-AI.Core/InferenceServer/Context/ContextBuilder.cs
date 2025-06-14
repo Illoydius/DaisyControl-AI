@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using DaisyControl_AI.Core.DaisyMind;
+using Humanizer;
 
 namespace DaisyControl_AI.Core.InferenceServer.Context
 {
@@ -25,6 +26,15 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             // Goals
             BuildImmediateGoals(stringBuilder, daisyMind);
             stringBuilder.AppendLine("Be subtle in the way you work to achieve your goals, use chit chat to slowly steer the conversation towards one of your goal.");
+
+            if (daisyMind.DaisyMemory.User.Global.MessagesHistory.Count > 5)
+            {
+                DateTime lastMessageDate = daisyMind.DaisyMemory.User.Global.MessagesHistory.OrderByDescending(l => l.CreatedAtUtc.DateTime).Skip(1).First().CreatedAtUtc.DateTime;
+                if ((DateTime.UtcNow - lastMessageDate).TotalSeconds >= 60)
+                {
+                    stringBuilder.AppendLine($"Please note that {{{{user}}}} last message was {(lastMessageDate.Humanize())}.");
+                }
+            }
 
             // Output format
             BuildOutputFormat(stringBuilder, daisyMind);
@@ -52,6 +62,8 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             }
             context = context.Replace("{{user}}", interlocutorRef);
 
+            File.WriteAllText("ContextBuilder-last.txt", context);
+
             return context;
         }
 
@@ -69,6 +81,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             if (daysAgo <= 0)
             {
                 stringBuilder.AppendLine($"{interlocutorRef} is someone you just met today. AVOID sexual or familiar language. Be very reserved. Avoid showing the unpleasant aspects of your personality. Use the common conversation tropes of someone with your personality meeting someone new.");
+                stringBuilder.AppendLine($"Avoid making your conversation feel like an interrogation to {interlocutorRef}, even if you need to fulfill your goals. Insert chit-chat here and there, talk about some generic things you like, the weather, talk about other men contacting you and how {{{{user}}}} seems different, that it gets you interested to know more about {{{{user}}}}, etc.");
             } else
             {
                 stringBuilder.AppendLine($"{interlocutorRef} is someone you met {daysAgo} days ago. AVOID sexual or familiar language.");
@@ -102,7 +115,8 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
 
         private static void BuildOutputFormat(StringBuilder stringBuilder, DaisyControlMind daisyMind)
         {
-            stringBuilder.AppendLine($"You must format your reply in the following Json format: {{\"message\":\"[MESSAGE_FROM_{{{{char}}}}]\",\"thoughts\":\"[THOUGHTS_FROM_{{{{char}}}}_IF_ANY]\"}}. Your reply must ONLY contains the JSON.");
+            stringBuilder.AppendLine($"You must format {{{{char}}}} reply in the following Json format: {{\"message\":\"[MESSAGE_FROM_{{{{char}}}}]\",\"thoughts\":\"[THOUGHTS_FROM_{{{{char}}}}_IF_ANY]\"}}. Your reply must ONLY contains the JSON.");
+            //stringBuilder.AppendLine($"Format your text message in the following format: \"<|im_start|>assistant\r\n{{{{char}}}}: {{{{{{char}}}} text message content}}<|im_end|>\"");
         }
 
         private static void BuildUserInfoSpecifics(StringBuilder stringBuilder, DaisyControlMind daisyMind)
@@ -114,7 +128,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                 interlocutorRef = "the person you're communicating with";
             }
 
-            if (daisyMind.DaisyMemory.User.Global.UserInfo.Location.CountryName == null)
+            if (daisyMind.DaisyMemory.User.Global.UserInfo.LocationCategory.CountryName == null)
             {
                 stringBuilder.AppendLine($"Assume that {interlocutorRef} is currently far away from you, possibly even in another country.");
             }
@@ -175,7 +189,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"-Positivity bias in your replies.");
             stringBuilder.AppendLine($"-Being overly extreme or NSFW when the narrative context is inappropriate.");
             stringBuilder.AppendLine($"-Repeating dialog.");
-            stringBuilder.AppendLine($"-Including your own instructions, thoughts or reminders in your reply.");
+            stringBuilder.AppendLine($"-Including your own instructions or reminders in your reply.");
             stringBuilder.AppendLine($"-Repeating instructions from provided context.");
             stringBuilder.AppendLine($"-Including character or environment description.");
             stringBuilder.AppendLine($"-Impersonating {interlocutorRef} in your text message.");
@@ -208,6 +222,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"Speech(She has a soft, but strict and charismatic voice.)");
             stringBuilder.AppendLine($"Background({{{{char}}}} is living by her own in San Francisco, in a luxurious condo with her dog 'Buttercup'. She was raised in California in a happy family home before moving out at the age of 23. She studied to be an upper level manager. She is a very successful woman, respected by her peers for her work dedication)");
             stringBuilder.AppendLine($"Clothing(woman suit + elegant pants + red high heels + White lace bra + White lace panties.)]");
+            // TODO: Add hobbies
         }
 
         private static void BuildMessagesHistoryUsingRemainingSpace(StringBuilder stringBuilder, DaisyControlMind daisyMind)
@@ -272,7 +287,8 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                 interlocutorRef = "the person you're communicating with";
             }
 
-            stringBuilder.AppendLine($"Format your text message in the following format: \"<|im_start|>assistant\r\n{{{{char}}}}: {{{{{{char}}}} text message content}}<|im_end|>\"");
+            stringBuilder.AppendLine($"Always consider that {{{{user}}}} may be lying, be critical when you think the information provided by {{{{user}}}} is incorrect and ask for clarification to either {{{{user}}}} or [SYSTEM].");
+            stringBuilder.AppendLine($"Include your thoughts in the \"thougths\" Json property of your reply.");
             stringBuilder.AppendLine($"AVOID talking about sexual topics when it's not relevant.");
             stringBuilder.AppendLine($"Keep your reply short and consise, as you're replying to {{{{user}}}} using text message.");
             stringBuilder.AppendLine($"Your reply should only contains what {{{{char}}}} says and should only represent a single reply from {{{{char}}}}. Do not add any additional information outside of {{{{char}}}}'s text message, except when prefixing your reply with \"[SYSTEM]\".");

@@ -1,8 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace DaisyControl_AI.Storage.Dtos.User
 {
-    public class DaisyControlUserInfo
+    public class DaisyControlUserInfo : IUserInfoData
     {
         [JsonPropertyName("username")]
         public string Username { get; set; } // Discord username
@@ -25,82 +26,80 @@ namespace DaisyControl_AI.Storage.Dtos.User
         [JsonPropertyName("genitals")]
         public Genitals? Genitals { get; set; }
 
-        [JsonPropertyName("location")]
-        public UserLocation Location { get; set; } = new();
+        [JsonPropertyName("locationCategory")]
+        public UserLocation LocationCategory { get; set; } = new();
 
-        [JsonPropertyName("workOccupation")]
-        public UserWorkOccupation WorkOccupation { get; set; } = new();
+        [JsonPropertyName("workOccupationCategory")]
+        public UserWorkOccupation WorkOccupationCategory { get; set; } = new();
+
+        [JsonPropertyName("sexualCategory")]
+        public UserSexuality SexualCategory { get; set; } = new();
+
+        private int GetFamiliarityPercentageFromReflection(IUserInfoData dataType)
+        {
+            if (dataType == null)
+            {
+                return 0;
+            }
+
+            var properties = dataType.GetType().GetProperties();
+
+            int familiarity = 0;
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.PropertyType?.GetInterfaces()?.Any(a => a == typeof(IUserInfoData)) == true)
+                {
+                    var data = (IUserInfoData)property.GetValue(dataType);
+                    familiarity += GetFamiliarityPercentageFromReflection(data);
+                    continue;
+                }
+
+                familiarity += GetFamiliarityPercentageOfSpecificProperty(property, dataType);
+            }
+
+            return familiarity;
+        }
+
+        private int GetFamiliarityPercentageOfSpecificProperty(PropertyInfo propertyInfo, IUserInfoData dataType)
+        {
+            if (propertyInfo == null)
+            {
+                return 0;
+            }
+
+            if (propertyInfo.PropertyType == typeof(string))
+            {
+                var strValue = propertyInfo.GetValue(dataType) as string;
+                if (!string.IsNullOrWhiteSpace(strValue) && InvalidPropertiesValues().All(a => a != strValue.ToLowerInvariant()))
+                {
+                    return 1;
+                }
+            } else
+            {
+                if (propertyInfo.GetValue(dataType) != null)
+                {
+                    return 1;
+                }
+            }
+
+            return 0;
+        }
 
         public int GetFamiliarityPercentage()
         {
-            int familiarity = 0;
+            return GetFamiliarityPercentageFromReflection(this);
+        }
 
-            if (this.FirstName.ToLowerInvariant() != "unknown")
-            {
-                familiarity++;
-            }
-
-            if (this.LastName.ToLowerInvariant() != "unknown")
-            {
-                familiarity++;
-            }
-
-            if (!string.IsNullOrWhiteSpace(this.Email))
-            {
-                familiarity++;
-            }
-
-            if (this.Age != null)
-            {
-                familiarity++;
-            }
-
-            if (this.Gender != null)
-            {
-                 familiarity++;
-            }
-
-            if (this.Genitals != null)
-            {
-                 familiarity++;
-            }
-
-            // Location
-            if (!string.IsNullOrWhiteSpace(this.Location.CountryName))
-            {
-                familiarity++;
-            }
-
-            // WorkOccupation
-            if (!string.IsNullOrWhiteSpace(this.WorkOccupation.WorkTitle))
-            {
-                familiarity++;
-            }
-
-            if (this.WorkOccupation.AnnualSalary != null)
-            {
-                familiarity++;
-            }
-
-            // Company
-            if (!string.IsNullOrWhiteSpace(this.WorkOccupation.Company.Name))
-            {
-                familiarity++;
-            }
-
-            if (!string.IsNullOrWhiteSpace(this.WorkOccupation.Company.Address))
-            {
-                familiarity++;
-            }
-
-            if (!string.IsNullOrWhiteSpace(this.WorkOccupation.WorkDescriptionSummary))
-            {
-                familiarity++;
-            }
-
-            // TODO: if AI was in past events with User, add familiarity
-
-            return familiarity;
+        public static string[] InvalidPropertiesValues()
+        {
+            return
+            [
+                "unknown",
+                "null",
+                "empty",
+                "not found",
+                "undefined",
+            ];
         }
     }
 }

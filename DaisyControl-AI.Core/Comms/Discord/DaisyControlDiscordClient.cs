@@ -24,7 +24,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             MessageCacheSize = 1024,
             ConnectionTimeout = 10000,
             HandlerTimeout = 5000,
-            DefaultRetryMode = RetryMode.RetryTimeouts,
+            DefaultRetryMode = RetryMode.AlwaysRetry,
             GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.GuildPresences,
         });
 
@@ -48,6 +48,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             IDiscordBotCommandHandler discordBotCommandHandler,
             IDiscordBotUserMessageHandler discordBotUserMessageHandler)
         {
+            CreateClient().Wait();
             var config = CommonConfigurationManager.ReloadConfig();
 
             if (!config.DiscordBotConfiguration.Enabled)
@@ -75,6 +76,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             fDiscordBotCommandService.Log += LogDiscordCommandEvent;
             discordSocketClient.MessageReceived += MessageReceived;
             discordSocketClient.MessageUpdated += MessageUpdated;
+            discordSocketClient.Disconnected += DiscordSocketClient_Disconnected; ;
             // TODO: MessageDeleted, ReactionAdded, ReactionRemoved, UserJoin, UserLeft, UserBanned, UserIsTyping, SlashCommandExecuted
             // TODO: handle  DiscordClientExtensions.GetDMChannelAsync(IDiscordClient, ulong) DiscordClientExtensions.GetDMChannelsAsync(IDiscordClient) 
 
@@ -91,6 +93,37 @@ namespace DaisyControl_AI.Core.Comms.Discord
 
             // Bind discord to a specific socket, this will trigger the Ready event once the bot is connected
             BindDiscordBot();
+        }
+
+        private async Task CreateClient()
+        {
+            discordSocketClient = new DiscordSocketClient(new DiscordSocketConfig
+            {
+                AlwaysDownloadUsers = true,
+                AlwaysDownloadDefaultStickers = true,
+                AlwaysResolveStickers = true,
+                MessageCacheSize = 1024,
+                ConnectionTimeout = 10000,
+                HandlerTimeout = 5000,
+                DefaultRetryMode = RetryMode.RetryTimeouts,
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.GuildPresences,
+            });
+        }
+
+        private async Task DiscordSocketClient_Disconnected(Exception arg)
+        {
+            LoggingManager.LogToFile("5e74ce12-8746-4f5f-ba92-62e992b021d5", $"Discord bot was disconnected.");
+
+            try
+            {
+                await StopAsync();
+            } catch (Exception _)
+            {
+            }
+            await Task.Delay(1000);
+            await CreateClient();
+            await Task.Delay(1000);
+            await BindDiscordBot();
         }
 
         private async Task DiscordPresenceUpdated(SocketUser socketUser, SocketPresence socketPresenceBefore, SocketPresence socketPresenceAfter)

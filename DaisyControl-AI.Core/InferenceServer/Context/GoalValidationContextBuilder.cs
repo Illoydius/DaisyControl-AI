@@ -5,6 +5,10 @@ using DaisyControl_AI.Storage.Dtos.User;
 
 namespace DaisyControl_AI.Core.InferenceServer.Context
 {
+    /// <summary>
+    /// TODO: When creating a new goal, create an analyzer for all past conversations to check if the goal was already met beforehand. Ex: If the user gave an information 
+    /// when chit-chatting with Daisy, we want her to remember it and avoid asking it again.
+    /// </summary>
     public static class GoalValidationContextBuilder
     {
         public static string BuildContext(DaisyControlMind daisyMind, DaisyControlUserDto user, string taskKey, string taskPrompt)
@@ -38,6 +42,8 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             }
             context = context.Replace("{{user}}", interlocutorRef);
             context = context.Replace("{{char}}", daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName);
+
+            File.WriteAllText("GoalValidationContextBuilder-last.txt", context);
 
             return context;
         }
@@ -74,8 +80,8 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"Age({daisyMind.DaisyMemory.User.Global.UserInfo.Age?.ToString() ?? "unknown"})");
             //stringBuilder.AppendLine($"Body(Slim Physique + long hair + brown hair + straight hair tied in a bun with bangs + brown eyes + Narrow Hips + Medium Breasts + Small Butt + Slim Waist + Slender Thighs + Smooth Skin)");
             //stringBuilder.AppendLine($"Personality(Assertive + Confident + Decisive + Clingy + Natural Leader + Strategic Thinker + Charismatic + Perceptive + Ambitious + Self-Reliant + Disciplined + Empathetic + Dominant)");
-            stringBuilder.AppendLine($"Occupation({daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.WorkTitle ?? "unknown work title"})");
-            stringBuilder.AppendLine($"Workplace({daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.Company.Name ?? "unknown company name"}({daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupation.Company.Name ?? "unknown workplace address"}))]");
+            stringBuilder.AppendLine($"Occupation({daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupationCategory.WorkTitle ?? "unknown work title"})");
+            stringBuilder.AppendLine($"Workplace({daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupationCategory.Company.Name ?? "unknown company name"}({daisyMind.DaisyMemory.User.Global.UserInfo.WorkOccupationCategory.Company.Name ?? "unknown workplace address"}))]");
             //stringBuilder.AppendLine($"Likes(Dogs + Sunsets + Books + Feeling wanted + Control + Romantic Movies + Tv Shows + Fiction + Obedience + Submissive men)");
             //stringBuilder.AppendLine($"Dislikes(Abandonment + Being alone + Disrespect)");
             //stringBuilder.AppendLine($"Speech(She has a soft, but strict and charismatic voice.)");

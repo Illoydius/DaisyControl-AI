@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text.Json;
+﻿using System.Text.Json;
 using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
 using DaisyControl_AI.Common.Utils;
@@ -8,11 +7,9 @@ using DaisyControl_AI.Core.DaisyMind;
 using DaisyControl_AI.Core.InferenceServer;
 using DaisyControl_AI.Core.InferenceServer.Context;
 using DaisyControl_AI.Core.Utils;
-using DaisyControl_AI.InferenceNode.Executors;
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 using DaisyControl_AI.Storage.Dtos.User;
-using Discord;
 
 namespace DaisyControl_AI.InferenceNode
 {
@@ -55,7 +52,7 @@ namespace DaisyControl_AI.InferenceNode
         {
             // Reserve the User for processing
             user.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(30);
-            user.Status = Storage.Dtos.UserStatus.Working;
+            user.Status = UserStatus.Working;
             if (!await usersHttpClient.UpdateUserAsync(user))
             {
                 LoggingManager.LogToFile("f11fe42e-0a1b-4f14-8441-bd03bdbea791", $"Couldn't reserve User [{user.Id}]. Re-queuing.");
@@ -142,9 +139,6 @@ namespace DaisyControl_AI.InferenceNode
                 {
                     // Failed to save the updated user, just unlock it then
                     await CheckinUserLock(ulong.Parse(user.Id), 1000);
-                } else
-                {
-                    await CheckinUserLock(ulong.Parse(user.Id), 1000);
                 }
             }
 
@@ -205,6 +199,8 @@ namespace DaisyControl_AI.InferenceNode
                 return 0;
             }
 
+            string userId = user.Id;
+
             try
             {
                 // Process the next pending message against the running inference server
@@ -217,7 +213,7 @@ namespace DaisyControl_AI.InferenceNode
                     await CheckinUserLock(ulong.Parse(user.Id), 1000);
                 } else
                 {
-                    await CheckinUserLock(ulong.Parse(user.Id), 1000);
+                    await CheckinUserLock(ulong.Parse(userId), 1000);
                 }
             }
 
@@ -264,6 +260,9 @@ namespace DaisyControl_AI.InferenceNode
             AIresponse.Text = AIMessageUtils.CleanAIResponse(daisyMind, AIresponse.Text);
             AIresponse.Text = StringUtils.GetJsonFromString(AIresponse.Text);
 
+            // TODO: if response is NULL or EMPTY?
+
+
             // Check if the AI response is the right format
             try
             {
@@ -295,7 +294,7 @@ namespace DaisyControl_AI.InferenceNode
             {
                 CreatedAtUtc = DateTime.UtcNow,
                 ReferentialType = MessageReferentialType.Assistant,
-                MessageContent = AIresponse.Text,
+                MessageContent = string.IsNullOrWhiteSpace(AIresponse.Text) ? " " : AIresponse.Text,
                 MessageStatus = MessageStatus.Pending,
                 SourceInfo = new()
                 {

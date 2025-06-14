@@ -1,4 +1,6 @@
-﻿using DaisyControl_AI.Common.Diagnostics;
+﻿using System.Reflection;
+using System.Text.Json.Serialization;
+using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.User;
 
@@ -28,42 +30,71 @@ namespace DaisyControl_AI.Core.Core.Decisions.Goals
             return false;
         }
 
-        private static bool ValidateGoalFromUserInfo(DaisyControlUserDto userToProcess, DaisyGoal goal)
+        private static bool ValidateGoalAgainstUserInfoProperties(IUserInfoData dataType, string serializedPropertyName)
         {
-            // Make sure to match it with GoalsDecisionManager.cs
-            // Also handle the familiarity in DaisyControlUserInfo.cs
-            switch (goal.GoalMemoryKey.ToLowerInvariant())
+            if (dataType == null)
             {
-                case "firstname":
-                    return !(string.IsNullOrWhiteSpace(userToProcess.UserInfo.FirstName) || userToProcess.UserInfo.FirstName.ToLowerInvariant().Trim() == "unknown");
-                case "lastname":
-                    return !(string.IsNullOrWhiteSpace(userToProcess.UserInfo.LastName) || userToProcess.UserInfo.LastName.ToLowerInvariant().Trim() == "unknown");
-                case "email":
-                    return !(string.IsNullOrWhiteSpace(userToProcess.UserInfo.Email));
-                case "age":
-                    return userToProcess.UserInfo.Age != null;
-                case "gender":
-                    return userToProcess.UserInfo.Gender != null;
-                case "genitals":
-                    return userToProcess.UserInfo.Genitals != null;
-                case "countryName":
-                    return !string.IsNullOrWhiteSpace(userToProcess.UserInfo.Location.CountryName);
-                case "worktitle":
-                    return userToProcess.UserInfo.WorkOccupation.WorkTitle != null;
-                case "annualsalary":
-                    return userToProcess.UserInfo.WorkOccupation.AnnualSalary != null;
-                case "companyname":
-                    return !string.IsNullOrWhiteSpace(userToProcess.UserInfo.WorkOccupation.Company.Name);
-                case "companyaddress":
-                    return !string.IsNullOrWhiteSpace(userToProcess.UserInfo.WorkOccupation.Company.Address);
-                case "workdescriptionsummary":
-                    return !string.IsNullOrWhiteSpace(userToProcess.UserInfo.WorkOccupation.WorkDescriptionSummary);
-                default:
-                    LoggingManager.LogToFile("3dc6a7f7-a5cd-475e-9396-6b434abb108c", $"Unhandled GoalMemoryKey [{goal.GoalMemoryKey}].");
-                    break;
+                return false;
+            }
+
+            var properties = dataType.GetType().GetProperties();
+
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.PropertyType?.GetInterfaces()?.Any(a => a == typeof(IUserInfoData)) == true)
+                {
+                    var data = (IUserInfoData)property.GetValue(dataType);
+                    if (ValidateGoalAgainstUserInfoProperties(data, serializedPropertyName))
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                // Check if the property is the one we're currently validating
+                if (property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name?.ToLowerInvariant() != serializedPropertyName)
+                {
+                    continue;
+                }
+
+                if (ValidateGoalAgainstUserInfoProperty(property, dataType, serializedPropertyName))
+                {
+                    return true;
+                }
             }
 
             return false;
+        }
+
+        private static bool ValidateGoalAgainstUserInfoProperty(PropertyInfo propertyInfo, IUserInfoData userInfoData, string serializedPropertyName)
+        {
+            if (propertyInfo == null)
+            {
+                return false;
+            }
+
+            if (propertyInfo.PropertyType == typeof(string))
+            {
+                var strValue = propertyInfo.GetValue(userInfoData) as string;
+                if (!string.IsNullOrWhiteSpace(strValue) && DaisyControlUserInfo.InvalidPropertiesValues().All(a => a != strValue.ToLowerInvariant()))
+                {
+                    return true;
+                }
+            } else
+            {
+                if (propertyInfo.GetValue(userInfoData) != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ValidateGoalFromUserInfo(DaisyControlUserDto userToProcess, DaisyGoal goal)
+        {
+            return ValidateGoalAgainstUserInfoProperties(userToProcess.UserInfo, goal.GoalMemoryKey);
         }
     }
 }
