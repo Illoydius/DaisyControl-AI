@@ -55,6 +55,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                             new AttributeDefinition("status", ScalarAttributeType.S),
                             new AttributeDefinition("nextMessageToProcessOperationAvailabilityAtUtc", ScalarAttributeType.N),
                             new AttributeDefinition("nextImmediateGoalOperationAvailabilityAtUtc", ScalarAttributeType.N),
+                            new AttributeDefinition("nextFollowUpAvailabilityAtUtc", ScalarAttributeType.N),
                             new AttributeDefinition("pendingInferenceTasksCounter", ScalarAttributeType.N),
                         }, new ProvisionedThroughput
                         {
@@ -89,6 +90,23 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                                     {
                                         new("status", KeyType.HASH),
                                         new("nextImmediateGoalOperationAvailabilityAtUtc", KeyType.RANGE),
+                                    },
+                                    Projection = new Projection
+                                    {
+                                        ProjectionType = ProjectionType.ALL,
+                                    },
+                                    ProvisionedThroughput = new ProvisionedThroughput
+                                    {
+                                        ReadCapacityUnits = 1000,
+                                        WriteCapacityUnits = 1000,
+                                    },
+                                },new()
+                                {
+                                    IndexName = config.StorageConfiguration.UsersWithFollowUpAvailabilityIndexName,
+                                    KeySchema = new List<KeySchemaElement>
+                                    {
+                                        new("status", KeyType.HASH),
+                                        new("nextFollowUpAvailabilityAtUtc", KeyType.RANGE),
                                     },
                                     Projection = new Projection
                                     {
@@ -689,6 +707,72 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
             {
                 // wrap exception
                 throw new CommonException("fbaabaae-1df2-4027-8fab-fa442e89f5f7", $"Unhandled exception when querying database to fetch users with pending inference tasks. Exception message [{ex.Message}].", ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<DaisyControlGetUsersResponseDto> TryGetUsersWithFollowUpsRequestsAsync(int limitRows)
+        {
+            var config = CommonConfigurationManager.ReloadConfig();
+
+            try
+            {
+                var queryResponse = await dynamoDBClient.QueryAsync(new QueryRequest
+                {
+                    TableName = userTableName,
+                    Limit = limitRows,
+                    ConsistentRead = false,
+                    IndexName = config.StorageConfiguration.UsersWithFollowUpAvailabilityIndexName,
+                    KeyConditionExpression = "#status = :status AND #nextFollowUpAvailabilityAtUtc < :nextFollowUpAvailabilityAtUtc",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        {
+                            "#status", "status"
+                        },
+                        {
+                            "#nextFollowUpAvailabilityAtUtc", "nextFollowUpAvailabilityAtUtc"
+                        },
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        {
+                            ":status", new AttributeValue { S = UserStatus.Ready.ToString() }
+                        },
+                        {
+                            ":nextFollowUpAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
+                        },
+                    },
+                }).ConfigureAwait(false);
+
+                if (queryResponse.Items.Count <= 0)
+                {
+                    return null; // no Items found
+                }
+
+                List<DaisyControlGetUserResponseDto> UsersCollection = new();
+
+                foreach (Dictionary<string, AttributeValue> itemFromDatabase in queryResponse.Items)
+                {
+                    var responseDocument = Document.FromAttributeMap(itemFromDatabase);
+                    var jsonResponse = responseDocument.ToJson();
+                    var user = JsonSerializer.Deserialize<DaisyControlGetUserResponseDto>(jsonResponse);
+                    UsersCollection.Add(user);
+                }
+
+                return new DaisyControlGetUsersResponseDto
+                {
+                    Users = UsersCollection.ToArray(),
+                };
+
+            } catch (ProvisionedThroughputExceededException)
+            {
+                await Task.Delay(NbMsToDelayAfterProvisionException);
+
+                throw;
+            } catch (Exception ex)
+            {
+                // wrap exception
+                throw new CommonException("3fb30607-ccce-4038-b231-4b784c7d3e05", $"Unhandled exception when querying database to fetch users with working status. Exception message [{ex.Message}].", ex);
             }
         }
     }

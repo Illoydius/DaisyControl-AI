@@ -35,6 +35,9 @@ namespace DaisyControl_AI.Storage.Dtos.User
         [JsonPropertyName("sexualCategory")]
         public UserSexuality SexualCategory { get; set; } = new();
 
+        [JsonPropertyName("hobbies")]
+        public List<string> Hobbies { get; set; } = new();
+
         private int GetFamiliarityPercentageFromReflection(IUserInfoData dataType)
         {
             if (dataType == null)

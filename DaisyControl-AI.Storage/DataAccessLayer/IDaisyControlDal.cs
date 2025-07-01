@@ -11,9 +11,10 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         Task<DaisyControlUpdateUserRequestDto> TryUpdateUserAsync(DaisyControlUpdateUserRequestDto daisyControlUpdateUserDto);
         Task<bool> TryDeleteUserAsync(string userId);
         Task<DaisyControlGetUsersResponseDto> TryGetUsersWithUserMessagesToProcessAsync(int limitRows);
+        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithPendingInferenceTasksAsync(int limitRows);
         Task<DaisyControlGetUsersResponseDto> TryGetUsersWithAIMessagesToProcessAsync(int limitRows);
         Task<DaisyControlGetUsersResponseDto> TryGetUsersWithWorkingStatusAsync(int limitRows);
         Task<DaisyControlGetUsersResponseDto> TryGetUsersWithOldestImmediateGoalsRefreshTimeAsync(int limitRows);
-        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithPendingInferenceTasksAsync(int limitRows);
+        Task<DaisyControlGetUsersResponseDto> TryGetUsersWithFollowUpsRequestsAsync(int limitRows);
     }
 }

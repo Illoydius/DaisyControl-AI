@@ -92,7 +92,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             };
 
             // Bind discord to a specific socket, this will trigger the Ready event once the bot is connected
-            BindDiscordBot();
+            _ = BindDiscordBot();
         }
 
         private async Task CreateClient()
@@ -120,6 +120,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             } catch (Exception _)
             {
             }
+
             await Task.Delay(1000);
             await CreateClient();
             await Task.Delay(1000);
@@ -192,11 +193,11 @@ namespace DaisyControl_AI.Core.Comms.Discord
             string messageValue = message.ToString();
             if (messageValue.Length > 1 && messageValue.First() == '!')
             {
-                Task.Run(async () => await discordBotCommandHandler.HandleNewCommandMessageAsync(socketUserMessage, replyToUserCallback));
+                _ = Task.Run(async () => await discordBotCommandHandler.HandleNewCommandMessageAsync(socketUserMessage, replyToUserCallback));
                 return;
             }
 
-            Task.Run(async () => await discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage, replyToUserCallback));
+            _ = Task.Run(async () => await discordBotUserMessageHandler.HandleNewClientMessageAsync(socketUserMessage, replyToUserCallback));
         }
 
         private async Task MessageUpdated(Cacheable<IMessage, ulong> cachedMessages, SocketMessage updatedMessage, ISocketMessageChannel channel)
@@ -209,7 +210,7 @@ namespace DaisyControl_AI.Core.Comms.Discord
             // If the message was not in the cache, downloading it will result in getting a copy of `after`.
             var previousMessage = await cachedMessages.GetOrDownloadAsync();
 
-            Task.Run(async () => await discordBotUserMessageHandler.HandleUpdatedMessageAsync(cachedMessages, previousMessage, updatedMessage, channel));
+            _ = Task.Run(async () => await discordBotUserMessageHandler.HandleUpdatedMessageAsync(cachedMessages, previousMessage, updatedMessage, channel));
         }
 
         public async Task<bool> SendMessageAsync(ulong channelId, DaisyControlMessageType messageType, string message)

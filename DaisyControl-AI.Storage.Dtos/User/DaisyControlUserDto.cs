@@ -41,6 +41,10 @@ namespace DaisyControl_AI.Storage.Dtos.User
         [JsonPropertyName("nextImmediateGoalOperationAvailabilityAtUtc")]
         public DateTime NextImmediateGoalOperationAvailabilityAtUtc { get; set; }
 
+        [JsonConverter(typeof(DateTimeUnixJsonConverter))]
+        [JsonPropertyName("nextFollowUpAvailabilityAtUtc")]
+        public DateTime NextFollowUpAvailabilityAtUtc { get; set; }
+
         [JsonPropertyName("aiImmediateGoals")]
         public List<DaisyGoal> AIImmediateGoals { get; set; } = new();
 

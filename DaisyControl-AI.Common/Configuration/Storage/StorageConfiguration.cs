@@ -12,5 +12,8 @@ namespace DaisyControl_AI.Common.Configuration.Storage
 
         [JsonPropertyName("usersWithInferenceTasksIndexName")]
         public string UsersWithInferenceTasksIndexName { get; set; }
+
+        [JsonPropertyName("usersWithFollowUpAvailabilityIndexName")]
+        public string UsersWithFollowUpAvailabilityIndexName { get; set; }
     }
 }

@@ -122,5 +122,15 @@ namespace DaisyControl_AI.Storage.Controllers
         {
             return await workflow.ExecuteAsync(userRequest);
         }
+
+        /// <summary>
+        /// Get a chunk of users with follow-up message generation to consider.
+        /// </summary>
+        [HttpGet]
+        [Route("followuprequests")]
+        public async Task<ActionResult<object>> FollowUpRequests(DaisyControlGetUsersWithFollowUpsRequestDto userRequest)
+        {
+            return await workflow.ExecuteAsync(userRequest);
+        }
     }
 }

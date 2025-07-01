@@ -48,10 +48,17 @@ namespace DaisyControl_AI.InferenceNode
             }
         }
 
-        private static async Task<DaisyControlUserDto> ReserveUserForProcessing(DaisyControlUserDto user)
+        private static async Task<DaisyControlUserDto> ReserveUserForProcessing(DaisyControlUserDto user, bool delayFollowUp)
         {
             // Reserve the User for processing
             user.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(30);
+            //user.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(30);
+
+            if (delayFollowUp)
+            {
+                user.NextFollowUpAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(30);
+            }
+
             user.Status = UserStatus.Working;
             if (!await usersHttpClient.UpdateUserAsync(user))
             {
@@ -122,7 +129,7 @@ namespace DaisyControl_AI.InferenceNode
                 return 0;
             }
 
-            DaisyControlUserDto user = await ReserveUserForProcessing(result.Users[0]);
+            DaisyControlUserDto user = await ReserveUserForProcessing(result.Users[0], false);
 
             if (user == null)
             {
@@ -172,8 +179,6 @@ namespace DaisyControl_AI.InferenceNode
 
             string queryJsonResult = await inferenceServerQueryerExecutor.Execute();
 
-
-
             if (!await inferenceServerQueryerExecutor.SaveResult(queryJsonResult))
             {
                 LoggingManager.LogToFile("86064c58-e91b-4329-bc5a-748db141ad49", $"Couldn't save AI response after executing inferenceTask against inference server. Task=[{JsonSerializer.Serialize(inferenceTaskToValidate)}], reply=[{queryJsonResult}]. Skipping.");
@@ -192,7 +197,7 @@ namespace DaisyControl_AI.InferenceNode
                 return 0;
             }
 
-            DaisyControlUserDto user = await ReserveUserForProcessing(result.Users[0]);
+            DaisyControlUserDto user = await ReserveUserForProcessing(result.Users[0], true);
 
             if (user == null)
             {
@@ -326,6 +331,9 @@ namespace DaisyControl_AI.InferenceNode
                     daisyMind.DaisyMemory.User.Global.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(5);
                 }
             }
+
+            // Refresh follow-up time as we just generated a new message
+            daisyMind.DaisyMemory.User.Global.NextFollowUpAvailabilityAtUtc = DateTime.UtcNow.AddSeconds(180);
 
             return daisyMind.DaisyMemory.User.Global;
             // Update DaisyMind (in User)

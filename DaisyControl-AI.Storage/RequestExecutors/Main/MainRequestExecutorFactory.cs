@@ -30,7 +30,8 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
                     return new DaisyControlGetUsersOldestImmediateGoalsRefreshTimeRequestExecutor(daisyControlDal, daisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto);
                 case DaisyControlGetUsersWithInferenceTasksRequestDto daisyControlGetUsersWithInferenceTasksRequestDto:
                     return new DaisyControlGetUsersWithInferenceTasksRequestExecutor(daisyControlDal, daisyControlGetUsersWithInferenceTasksRequestDto);
-
+                case DaisyControlGetUsersWithFollowUpsRequestDto daisyControlGetUsersWithFollowUpsRequestDto:
+                    return new DaisyControlGetUsersWithFollowUpsRequestExecutor(daisyControlDal, daisyControlGetUsersWithFollowUpsRequestDto);
 
                 default:
                     return null;// TODO : replace with unhandledExc

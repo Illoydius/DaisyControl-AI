@@ -92,7 +92,7 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 
                     // Generate some goals BEFORE processing the new message
                     await GoalsDecisionManager.ReflectOnImmediateGoalsForNextAvailableUser();
-                    user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 120);
+                    user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 600);
                 }
 
                 if (user == null)
@@ -122,6 +122,7 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                 daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
                 daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(userMessage);
                 daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
+                daisyMind.DaisyMemory.User.Global.NextFollowUpAvailabilityAtUtc = DateTime.UtcNow.AddHours(24);
 
             } finally
             {
