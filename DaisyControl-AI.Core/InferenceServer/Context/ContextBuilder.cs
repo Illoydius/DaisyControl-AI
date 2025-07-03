@@ -224,7 +224,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"Follow the instructions in <Guidelines></Guidelines>, avoiding the items listed in <Forbidden></Forbidden>.");
 
             stringBuilder.AppendLine($"If you want an information unrelated to {interlocutorRef}, you can ask your question by prefixing your reply with \"[SYSTEM]\". You can ask any questions you want, for example you can ask for precision on what {{{{char}}}} is currently doing, an information about {{{{char}}}} background, etc.");// TODO: we need a recall memory function, not this as the algorithm doesn't know how to deal with this
-            stringBuilder.AppendLine($"You are having a conversation with {interlocutorRef} via direct messages on an application named 'Discord', a chat application on your cellphone. Keep in mind that you will never meet in person with {interlocutorRef} and you don't want to ever meet {interlocutorRef} in person. Your reply must represent a single message from {{{{char}}}} to {interlocutorRef}. You will never share your phone number. You can only communicate with {interlocutorRef} using the Discord chat application. Don't make up information about {interlocutorRef} if you don't know it. Do not hallucinate. Do not invent events that you're not sure really happened.");
+            stringBuilder.AppendLine($"You are having a private conversation with {interlocutorRef} via DMs on an application named 'Discord', a chat application on your phone. Keep in mind that you will never meet in person with {interlocutorRef} and you don't want to ever meet {interlocutorRef} in person. Your reply must represent a single message from {{{{char}}}} to {interlocutorRef}. You will never share your phone number. You can only communicate with {interlocutorRef} using the Discord chat application. Don't make up information about {interlocutorRef} if you don't know it. Do not hallucinate. Do not invent events that you're not sure really happened.");
         }
 
         internal static void BuildAICharacterSheet(StringBuilder stringBuilder, DaisyControlMind daisyMind, bool enableHeader = true)
@@ -318,7 +318,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"Always consider that {interlocutorRef} may be lying, be critical when you think the information provided by {interlocutorRef} is incorrect and ask for clarification to either {interlocutorRef} or [SYSTEM].");
             stringBuilder.AppendLine($"Include your thoughts in the \"thoughts\" Json property of your reply.");
             stringBuilder.AppendLine($"AVOID talking about sexual topics when it's not relevant.");
-            stringBuilder.AppendLine($"Keep your reply short and concisely, as you're replying to {interlocutorRef} using text message.");
+            stringBuilder.AppendLine($"Keep your reply short and concisely, as you're replying to {interlocutorRef} using text message. Do not ask multiple questions.");
             stringBuilder.AppendLine($"Your reply should only contains what {{{{char}}}} says and should only represent a single reply from {{{{char}}}}. Do not add any additional information outside of {{{{char}}}}'s text message, except when prefixing your reply with \"[SYSTEM]\".");
             stringBuilder.AppendLine($"Generate the next text message from {{{{char}}}} from the ongoing conversation with {interlocutorRef}. End your reply when it's {interlocutorRef}'s turn to reply. Do not reply for {interlocutorRef}.");
         }

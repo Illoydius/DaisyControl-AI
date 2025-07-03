@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DaisyControl_AI.Common.Configuration;
 using DaisyControl_AI.Common.Diagnostics;
+using DaisyControl_AI.Common.Exceptions;
 using DaisyControl_AI.Common.HttpRequest;
 
 namespace DaisyControl_AI.Core.InferenceServer
@@ -19,6 +20,11 @@ namespace DaisyControl_AI.Core.InferenceServer
         {
             var config = CommonConfigurationManager.ReloadConfig();
 
+            if (config.InferenceNodeConfiguration?.InferenceServerConfiguration == null)
+            {
+                throw new CommonException("e39e6954-163f-432b-a94b-6c1ebf8ce7c6", $"InferenceNodeConfiguration.InferenceServerConfiguration isn't configured in local Config. Inference can't be processed.");
+            }
+
             maxContext = config.InferenceNodeConfiguration.InferenceServerConfiguration.MaxContextLength;
             maxQueryLength = config.InferenceNodeConfiguration.InferenceServerConfiguration.MaxTokensToGenerateInSingleQueryLength;
         }
@@ -33,7 +39,8 @@ namespace DaisyControl_AI.Core.InferenceServer
             try
             {
                 return JsonSerializer.Deserialize<InferenceServerPromptResponseDto>(responseDto);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 LoggingManager.LogToFile("c6db478e-e854-4e86-a1fc-f0a84ef4c236", $"Couldn't deserialize prompt model from inference server. obj = [{responseDto}].");
                 return null;

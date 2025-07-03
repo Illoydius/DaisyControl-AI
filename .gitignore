@@ -6,3 +6,4 @@
 /docker/Storage/docker/dynamodb/shared-local-instance.db
 /DaisyControl-AI.Storage/DaisyControl.log
 /DaisyControl-AI.Storage/config.json
+/DaisyControl-AI.WebAPI/AskForFollowUpContextBuilder-last.txt

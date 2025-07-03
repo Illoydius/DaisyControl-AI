@@ -1,5 +1,8 @@
 ﻿using DaisyControl_AI.Common.Diagnostics;
 using DaisyControl_AI.Common.HttpRequest;
+using DaisyControl_AI.Core.DaisyMind;
+using DaisyControl_AI.Core.InferenceServer;
+using DaisyControl_AI.Core.InferenceServer.Context;
 using DaisyControl_AI.Storage.Dtos.Response.Users;
 using DaisyControl_AI.Storage.Dtos.User;
 
@@ -47,21 +50,30 @@ namespace DaisyControl_AI.Core.Core.Decisions.FollowUp
                 // If the last message is still fairly new
                 if (mostRecentMessageDateTime.TotalOffsetMinutes <= 15)
                 {
-                    // TODO: Poke AI with the context and ask it if it wants to add a follow-up message.
+                    // Query AI with the context and ask it if it wants to add a follow-up message
+                    DaisyControlMind daisyMind = await DaisyMindFactory.GenerateDaisyMind(userToProcess).ConfigureAwait(false);
+                    string context = AskForFollowUpContextBuilder.BuildContext(daisyMind, userToProcess);
+                    InferenceServerPromptResultResponseDto AIresponse = await InferenceServerQueryer.GenerateStandardAiResponseAsync(context).ConfigureAwait(false);
+
+                    // TODO: Add a floor 5% chance that the AI will follow-up no matter what
+                    requireFollowUp = AIresponse.Text.ToLowerInvariant().Contains("true") || AIresponse.Text.ToLowerInvariant().Contains("yes");
 
                     if (requireFollowUp)
                     {
                         // TODO: Poke AI to generate new message to send to User
-                    } else
+                    }
+                    else
                     {
                         // TODO: handle sleeping schedule to avoid sending message whilst the user is sleeping
                         userToProcess.NextFollowUpAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(random.Next(120, 2280));// between 2 hours and 2 days, the AI will poke the User again
                     }
-                } else
+                }
+                else
                 {
                     // TODO: We're not in a living conversation follow-up scenario here. The conversation ended 'a while ago' and we want the AI to poke the User to start a brand new conversation
                 }
-            } finally
+            }
+            finally
             {
                 userToProcess.Status = Storage.Dtos.UserStatus.Ready;
                 if (!await usersHttpClient.UpdateUserAsync(userToProcess))
