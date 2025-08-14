@@ -1,5 +1,4 @@
 ﻿using DaisyControl_AI.Common.Exceptions.HTTP;
-using DaisyControl_AI.Storage.Dtos.Requests;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
 using DaisyControl_AI.Storage.Workflows;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +9,9 @@ namespace DaisyControl_AI.Storage.Controllers
     [Route("api/[controller]")]
     public class UsersController : Controller
     {
-        private IWorkflow workflow;
+        private IUsersWorkflow workflow;
 
-        public UsersController(IWorkflow workflow)
+        public UsersController(IUsersWorkflow workflow)
         {
             this.workflow = workflow;
         }
@@ -107,8 +106,8 @@ namespace DaisyControl_AI.Storage.Controllers
         /// Get a chunk of users with the oldest immediate goals refresh time.
         /// </summary>
         [HttpGet]
-        [Route("oldestimmediategoals")]
-        public async Task<ActionResult<object>> OldestImmediateGoals(DaisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto userRequest)
+        [Route("oldestthoughtabout")]
+        public async Task<ActionResult<object>> OldestThoughtAbout(DaisyControlGetUsersWithOldestThoughtAboutRefreshTimeRequestDto userRequest)
         {
             return await workflow.ExecuteAsync(userRequest);
         }

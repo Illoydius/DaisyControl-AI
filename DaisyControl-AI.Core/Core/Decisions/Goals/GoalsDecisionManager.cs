@@ -13,29 +13,9 @@ namespace DaisyControl_AI.Core.Core.Decisions.Goals
         private static DaisyControlStorageUsersClient usersHttpClient = new();
         private static Random random = new Random(DateTime.Now.Millisecond);
 
-        public static async Task<bool> ReflectOnImmediateGoalsForNextAvailableUser()
+        public static async Task<bool> ReflectOnImmediateGoalsForNextAvailableUser(DaisyControlUserDto userToProcess)
         {
-            DaisyControlGetUsersResponseDto usersDto = await usersHttpClient.GetUsersWithOldestImmediateGoalsRefreshTimeAsync(1);
-
-            if (usersDto == null)
-            {
-                return false;
-            }
-
-            DaisyControlUserDto userToProcess = null;
-            foreach (DaisyControlUserDto user in usersDto.Users)
-            {
-                user.NextImmediateGoalOperationAvailabilityAtUtc = DateTime.UtcNow.AddMinutes(30);
-                user.Status = UserStatus.Working;
-                if (await usersHttpClient.UpdateUserAsync(user))
-                {
-                    ++user.Revision;
-                    userToProcess = user;
-                    break;
-                }
-            }
-
-            if (userToProcess == null)
+            if(userToProcess == null)
             {
                 return false;
             }

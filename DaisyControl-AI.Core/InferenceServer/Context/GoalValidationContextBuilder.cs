@@ -41,7 +41,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                 interlocutorRef = $"the person {{{{char}}}} is communicating with";
             }
             context = context.Replace("{{user}}", interlocutorRef);
-            context = context.Replace("{{char}}", daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName);
+            context = context.Replace("{{char}}", daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName);
 
             File.WriteAllText("GoalValidationContextBuilder-last.txt", context);
 
@@ -121,7 +121,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                         referentialName = daisyMind.DaisyMemory.User.Global.UserInfo.FirstName;
                         break;
                     case MessageReferentialType.Assistant:
-                        referentialName = daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName;
+                        referentialName = daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName;
                         break;
                     case MessageReferentialType.System:
                         referentialName = $"system";

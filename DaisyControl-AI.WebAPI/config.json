@@ -16,9 +16,10 @@
   },
   "storageConfiguration": {
     "usersWithMessagesToProcessIndexName": "status-nextMessageToProcessOperationAvailabilityAtUtc-index",
-    "usersWithOldestImmediateGoalsTimeIndexName": "status-nextImmediateGoalOperationAvailabilityAtUtc-index",
+    "usersWithLastThoughtAboutTimeIndexName": "status-LastThoughtAboutAtUtc-index",
     "usersWithInferenceTasksIndexName": "status-pendingInferenceTasksCounter-index",
-    "usersWithFollowUpAvailabilityIndexName": "status-nextFollowUpAvailabilityAtUtc-index"
+    "usersWithFollowUpAvailabilityIndexName": "status-nextFollowUpAvailabilityAtUtc-index",
+    "personasWithInferenceTasksIndexName": "status-pendingInferenceTasksCounter-index"
   },
   "logVerbosity": "Verbose"
 }

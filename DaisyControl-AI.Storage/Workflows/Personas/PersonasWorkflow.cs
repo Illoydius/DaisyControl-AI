@@ -1,15 +1,15 @@
 ﻿
 using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos;
-using DaisyControl_AI.Storage.RequestExecutors.Main;
+using DaisyControl_AI.Storage.RequestExecutors.Personas;
 
 namespace DaisyControl_AI.Storage.Workflows.Main
 {
-    public class MainWorkflow : IWorkflow
+    public class PersonasWorkflow : IPersonasWorkflow
     {
-        private IDaisyControlDal daisyControlDal = null;
+        private IPersonasDal daisyControlDal = null;
 
-        public MainWorkflow(IDaisyControlDal daisyControlDal)
+        public PersonasWorkflow(IPersonasDal daisyControlDal)
         {
             this.daisyControlDal = daisyControlDal;
         }
@@ -21,7 +21,7 @@ namespace DaisyControl_AI.Storage.Workflows.Main
                 return null;
             }
 
-            var executor = MainRequestExecutorFactory.GenerateExecutor(daisyControlDal, postDto);
+            var executor = PersonasRequestExecutorFactory.GenerateExecutor(daisyControlDal, postDto);
 
             if (executor == null)
             {

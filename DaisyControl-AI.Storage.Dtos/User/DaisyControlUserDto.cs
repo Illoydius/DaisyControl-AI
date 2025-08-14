@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using DaisyControl_AI.Core.DaisyMind.DaisyMemory.AI;
 using DaisyControl_AI.Storage.Dtos.JsonConverters;
 
 namespace DaisyControl_AI.Storage.Dtos.User
@@ -7,7 +6,6 @@ namespace DaisyControl_AI.Storage.Dtos.User
     public class DaisyControlUserDto : IStorageDto
     {
         private List<InferenceTask> _inferenceTasks = new();
-        private int _pendingInferenceTasksCounter = new();
 
         [JsonPropertyName("userId")]
         public string Id { get; set; }
@@ -21,8 +19,8 @@ namespace DaisyControl_AI.Storage.Dtos.User
         [JsonPropertyName("messagesHistory")]
         public List<DaisyControlMessage> MessagesHistory { get; set; } = new();
 
-        [JsonPropertyName("aiGlobal")]
-        public DaisyControlStorageMind AIGlobal { get; set; } = new();
+        [JsonPropertyName("aiPersonaId")]
+        public string AIPersonaId { get; set; } = null;
 
         [JsonPropertyName("lastModifiedAt")]
         public DateTimeOffset LastModifiedAtUtc { get; set; }
@@ -33,18 +31,27 @@ namespace DaisyControl_AI.Storage.Dtos.User
         [JsonPropertyName("status")]
         public UserStatus Status { get; set; }
 
+        // TODO: move to DaisyControlAIPersonaDto by User?
+        [JsonConverter(typeof(DateTimeUnixJsonConverter))]
+        [JsonPropertyName("lastThoughtAboutAtUtc")]
+        public DateTime LastThoughtAboutAtUtc { get; set; } = DateTime.UtcNow.AddYears(-10);
+
+        // TODO: move to DaisyControlAIPersonaDto by User?
         [JsonConverter(typeof(DateTimeUnixJsonConverter))]
         [JsonPropertyName("nextMessageToProcessOperationAvailabilityAtUtc")]
-        public DateTime NextMessageToProcessOperationAvailabilityAtUtc { get; set; }
+        public DateTime NextMessageToProcessOperationAvailabilityAtUtc { get; set; } = DateTime.UtcNow.AddYears(10);
 
+        // TODO: move to DaisyControlAIPersonaDto by User?
         [JsonConverter(typeof(DateTimeUnixJsonConverter))]
         [JsonPropertyName("nextImmediateGoalOperationAvailabilityAtUtc")]
-        public DateTime NextImmediateGoalOperationAvailabilityAtUtc { get; set; }
+        public DateTime NextImmediateGoalOperationAvailabilityAtUtc { get; set; } = DateTime.UtcNow.AddYears(10);
 
+        // TODO: move to DaisyControlAIPersonaDto by User?
         [JsonConverter(typeof(DateTimeUnixJsonConverter))]
         [JsonPropertyName("nextFollowUpAvailabilityAtUtc")]
-        public DateTime NextFollowUpAvailabilityAtUtc { get; set; }
+        public DateTime NextFollowUpAvailabilityAtUtc { get; set; } = DateTime.UtcNow.AddYears(10);
 
+        // TODO: move to DaisyControlAIPersonaDto by User?
         [JsonPropertyName("aiImmediateGoals")]
         public List<DaisyGoal> AIImmediateGoals { get; set; } = new();
 

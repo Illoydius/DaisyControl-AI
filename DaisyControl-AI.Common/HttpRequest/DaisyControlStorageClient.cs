@@ -153,9 +153,9 @@ namespace DaisyControl_AI.Common.HttpRequest
             }
         }
 
-        public async Task<DaisyControlGetUsersResponseDto> GetUsersWithOldestImmediateGoalsRefreshTimeAsync(int limitNbUsersToFetch = 3)
+        public async Task<DaisyControlGetUsersResponseDto> GetUsersWithOldestThinkRefreshTimeAsync(int limitNbUsersToFetch = 3)
         {
-            string url = $"{usersUrl}/oldestimmediategoals?maxNbUsersToFetch={limitNbUsersToFetch}";
+            string url = $"{usersUrl}/oldestthoughtabout?maxNbUsersToFetch={limitNbUsersToFetch}";
             var serializedResponse = await CustomHttpClient.TryGetAsync(url).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(serializedResponse))

@@ -1,4 +1,5 @@
 ﻿using DaisyControl_AI.Core.DaisyMind.DaisyMemory.LifeEvents;
+using DaisyControl_AI.Core.DaisyMind.DaisyMemory.Schedule;
 using DaisyControl_AI.Core.DaisyMind.DaisyMemory.User;
 
 namespace DaisyControl_AI.Core.DaisyMind.DaisyMemory
@@ -15,5 +16,6 @@ namespace DaisyControl_AI.Core.DaisyMind.DaisyMemory
         /// </summary>
         public List<IAILifeEvent> EventsHistory { get; set; }
         public DaisyControlUserMemory User { get; set; }
+        public DaisyControlPersonaMemory Self { get; set; }
     }
 }

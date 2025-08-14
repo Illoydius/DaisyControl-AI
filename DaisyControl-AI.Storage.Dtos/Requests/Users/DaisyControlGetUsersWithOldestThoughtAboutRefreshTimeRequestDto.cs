@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace DaisyControl_AI.Storage.Dtos.Requests.Users
 {
     /// <summary>
-    /// Represent a request to get a chunk of users with the oldest immediate goals refresh time.
+    /// Represent a request to get a chunk of users with the oldest thought about refresh time.
     /// </summary>
-    public class DaisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto : IStorageDto
+    public class DaisyControlGetUsersWithOldestThoughtAboutRefreshTimeRequestDto : IStorageDto
     {
         [FromQuery]
         [JsonPropertyName("maxNbUsersToFetch")]

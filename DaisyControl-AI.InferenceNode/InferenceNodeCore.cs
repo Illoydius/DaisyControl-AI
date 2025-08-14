@@ -39,7 +39,7 @@ namespace DaisyControl_AI.InferenceNode
                 if (nbTasksProcessed <= 0)
                 {
                     // wait only if there's nothing in buffer
-                    await Task.Delay(3000);
+                    await Task.Delay(1000);
                 } else
                 {
                     await Task.Delay(500);

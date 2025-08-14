@@ -1,13 +1,13 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
-using DaisyControl_AI.Storage.RequestExecutors.Main.Users;
+using DaisyControl_AI.Storage.RequestExecutors.Main;
 
-namespace DaisyControl_AI.Storage.RequestExecutors.Main
+namespace DaisyControl_AI.Storage.RequestExecutors.Users
 {
-    public static class MainRequestExecutorFactory
+    public static class UsersRequestExecutorFactory
     {
-        public static IMainRequestExecutor GenerateExecutor(IDaisyControlDal daisyControlDal, IStorageDto postDto)
+        public static IMainRequestExecutor GenerateExecutor(IUsersDal daisyControlDal, IStorageDto postDto)
         {
             switch (postDto)
             {
@@ -26,8 +26,8 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
                     return new DaisyControlGetUsersWithUnprocessedAIMessagesRequestExecutor(daisyControlDal, daisyControlGetUsersWithUnprocessedAIMessagesRequestDto);
                 case DaisyControlGetUsersWithWorkingStatusRequestDto daisyControlGetUsersWithWorkingStatusRequestDto:
                     return new DaisyControlGetUsersWithWorkingStatusRequestExecutor(daisyControlDal, daisyControlGetUsersWithWorkingStatusRequestDto);
-                case DaisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto daisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto:
-                    return new DaisyControlGetUsersOldestImmediateGoalsRefreshTimeRequestExecutor(daisyControlDal, daisyControlGetUsersWithOldestImmediateGoalsRefreshTimeRequestDto);
+                case DaisyControlGetUsersWithOldestThoughtAboutRefreshTimeRequestDto daisyControlGetUsersWithOldestThoughtAboutRefreshTimeRequestDto:
+                    return new DaisyControlGetUsersOldestThoughtAboutRefreshTimeRequestExecutor(daisyControlDal, daisyControlGetUsersWithOldestThoughtAboutRefreshTimeRequestDto);
                 case DaisyControlGetUsersWithInferenceTasksRequestDto daisyControlGetUsersWithInferenceTasksRequestDto:
                     return new DaisyControlGetUsersWithInferenceTasksRequestExecutor(daisyControlDal, daisyControlGetUsersWithInferenceTasksRequestDto);
                 case DaisyControlGetUsersWithFollowUpsRequestDto daisyControlGetUsersWithFollowUpsRequestDto:

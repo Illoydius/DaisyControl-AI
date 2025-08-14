@@ -1,17 +1,18 @@
 ﻿using DaisyControl_AI.Common.Exceptions.HTTP;
 using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
+using DaisyControl_AI.Storage.RequestExecutors.Main;
 
-namespace DaisyControl_AI.Storage.RequestExecutors.Main.Users
+namespace DaisyControl_AI.Storage.RequestExecutors.Users
 {
     public class DaisyControlDeleteUserRequestExecutor : IMainRequestExecutor
     {
         private DaisyControlDeleteUserRequestDto daisyControlDeleteUserDto = null;
-        private IDaisyControlDal daisyControlDal = null;
+        private IUsersDal daisyControlDal = null;
         private object response = null;
 
         public DaisyControlDeleteUserRequestExecutor(
-            IDaisyControlDal daisyControlDal,
+            IUsersDal daisyControlDal,
             DaisyControlDeleteUserRequestDto daisyControlDeleteUserDto)
         {
             this.daisyControlDeleteUserDto = daisyControlDeleteUserDto;

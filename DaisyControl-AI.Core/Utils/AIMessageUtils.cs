@@ -45,14 +45,14 @@ namespace DaisyControl_AI.Core.Utils
                     responseText = responseText.Substring(9, responseText.Length - 9).TrimStart();
                 }
 
-                if (responseText.ToLowerInvariant().StartsWith($"{daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.ToLowerInvariant()}:"))
+                if (responseText.ToLowerInvariant().StartsWith($"{daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName.ToLowerInvariant()}:"))
                 {
-                    responseText = responseText.Substring(daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.Length + 1, responseText.Length - daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.Length - 1).TrimStart();
+                    responseText = responseText.Substring(daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName.Length + 1, responseText.Length - daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName.Length - 1).TrimStart();
                 }
 
-                if (responseText.ToLowerInvariant().StartsWith($"{daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.ToLowerInvariant()} :"))
+                if (responseText.ToLowerInvariant().StartsWith($"{daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName.ToLowerInvariant()} :"))
                 {
-                    responseText = responseText.Substring(daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.Length + 2, responseText.Length - daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName.Length - 2).TrimStart();
+                    responseText = responseText.Substring(daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName.Length + 2, responseText.Length - daisyMind.DaisyMemory.Self  .Global.PersonaInfo.FirstName.Length - 2).TrimStart();
                 }
 
                 if (responseText.ToLowerInvariant().StartsWith($"{daisyMind.DaisyMemory.User.Global.UserInfo.FirstName.ToLowerInvariant()}:"))

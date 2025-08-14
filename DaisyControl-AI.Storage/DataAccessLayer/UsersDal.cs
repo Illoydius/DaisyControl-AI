@@ -14,7 +14,7 @@ using DaisyControl_AI.Storage.Dtos.Response.Users;
 
 namespace DaisyControl_AI.Storage.DataAccessLayer
 {
-    public class DaisyControlDal : IDaisyControlDal
+    public class UsersDal : IUsersDal
     {
         private const int NbMsToDelayAfterProvisionException = 5000;
         private const int NbMsUnreachableDbOnStartup = 30000;
@@ -23,7 +23,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         private string DynamoDBUri = "http://127.0.0.1:8822";
         private IAmazonDynamoDB dynamoDBClient = null;
 
-        public DaisyControlDal()
+        public UsersDal()
         {
             dynamoDBClient = InitClient();
             InitDatabase().Wait();
@@ -54,7 +54,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                             new AttributeDefinition("userId", ScalarAttributeType.S),
                             new AttributeDefinition("status", ScalarAttributeType.S),
                             new AttributeDefinition("nextMessageToProcessOperationAvailabilityAtUtc", ScalarAttributeType.N),
-                            new AttributeDefinition("nextImmediateGoalOperationAvailabilityAtUtc", ScalarAttributeType.N),
+                            new AttributeDefinition("lastThoughtAboutAtUtc", ScalarAttributeType.N),
                             new AttributeDefinition("nextFollowUpAvailabilityAtUtc", ScalarAttributeType.N),
                             new AttributeDefinition("pendingInferenceTasksCounter", ScalarAttributeType.N),
                         }, new ProvisionedThroughput
@@ -85,11 +85,11 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                                 },
                                 new()
                                 {
-                                    IndexName = config.StorageConfiguration.UsersWithOldestImmediateGoalsTimeIndexName,
+                                    IndexName = config.StorageConfiguration.UsersWithLastThoughtAboutTimeIndexName,
                                     KeySchema = new List<KeySchemaElement>
                                     {
                                         new("status", KeyType.HASH),
-                                        new("nextImmediateGoalOperationAvailabilityAtUtc", KeyType.RANGE),
+                                        new("lastThoughtAboutAtUtc", KeyType.RANGE),
                                     },
                                     Projection = new Projection
                                     {
@@ -524,25 +524,26 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     TableName = userTableName,
                     Limit = limitRows,
                     ConsistentRead = false,
-                    IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
-                    KeyConditionExpression = "#status = :status AND #nextMessageToProcessOperationAvailabilityAtUtc < :nextMessageToProcessOperationAvailabilityAtUtc",
+                    //IndexName = config.StorageConfiguration.UsersWithMessagesToProcessIndexName,
+                    //KeyConditionExpression = "#status = :status AND #nextMessageToProcessOperationAvailabilityAtUtc < :nextMessageToProcessOperationAvailabilityAtUtc",
+                    KeyConditionExpression = "#status = :status",
                     ExpressionAttributeNames = new Dictionary<string, string>
                     {
                         {
                             "#status", "status"
                         },
-                        {
-                            "#nextMessageToProcessOperationAvailabilityAtUtc", "nextMessageToProcessOperationAvailabilityAtUtc"
-                        },
+                        //{
+                        //    "#nextMessageToProcessOperationAvailabilityAtUtc", "nextMessageToProcessOperationAvailabilityAtUtc"
+                        //},
                     },
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                     {
                         {
                             ":status", new AttributeValue { S = UserStatus.Working.ToString() }
                         },
-                        {
-                            ":nextMessageToProcessOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.AddYears(10).ToUnixTime().ToString() }
-                        },
+                        //{
+                        //    ":nextMessageToProcessOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.AddYears(10).ToUnixTime().ToString() }
+                        //},
                     },
                 }).ConfigureAwait(false);
 
@@ -579,7 +580,7 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
         }
 
         /// <inheritdoc />
-        public async Task<DaisyControlGetUsersResponseDto> TryGetUsersWithOldestImmediateGoalsRefreshTimeAsync(int limitRows)
+        public async Task<DaisyControlGetUsersResponseDto> TryGetUsersWithOldestThoughtAboutRefreshTimeAsync(int limitRows)
         {
             var config = CommonConfigurationManager.ReloadConfig();
 
@@ -590,25 +591,19 @@ namespace DaisyControl_AI.Storage.DataAccessLayer
                     TableName = userTableName,
                     Limit = limitRows,
                     ConsistentRead = false,
-                    IndexName = config.StorageConfiguration.UsersWithOldestImmediateGoalsTimeIndexName,
-                    KeyConditionExpression = "#status = :status AND #nextImmediateGoalOperationAvailabilityAtUtc < :nextImmediateGoalOperationAvailabilityAtUtc",
+                    IndexName = config.StorageConfiguration.UsersWithLastThoughtAboutTimeIndexName,
+                    KeyConditionExpression = "#status = :status",
                     ExpressionAttributeNames = new Dictionary<string, string>
                     {
                         {
                             "#status", "status"
-                        },
-                        {
-                            "#nextImmediateGoalOperationAvailabilityAtUtc", "nextImmediateGoalOperationAvailabilityAtUtc"
-                        },
+                        }
                     },
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                     {
                         {
                             ":status", new AttributeValue { S = UserStatus.Ready.ToString() }
-                        },
-                        {
-                            ":nextImmediateGoalOperationAvailabilityAtUtc", new AttributeValue { N = DateTime.UtcNow.ToUnixTime().ToString() }
-                        },
+                        }
                     },
                 }).ConfigureAwait(false);
 

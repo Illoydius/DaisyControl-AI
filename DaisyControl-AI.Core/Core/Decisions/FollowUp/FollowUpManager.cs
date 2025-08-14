@@ -14,8 +14,9 @@ namespace DaisyControl_AI.Core.Core.Decisions.FollowUp
         private static DaisyControlStorageUsersClient usersHttpClient = new();
         private static Random random = new Random(DateTime.Now.Millisecond);
 
-        public static async Task<bool> ReflectOnFollowUpConversations()
+        public static async Task<bool> ReflectOnFollowUpConversations(DaisyControlUserDto userToProcessTODO)
         {
+            // TODO: generate possibility of new FollowUpRequests instead of getting users with existing requests
             DaisyControlGetUsersResponseDto usersDto = await usersHttpClient.GetUsersWithFollowUpRequestsAsync(1);
 
             if (usersDto == null)

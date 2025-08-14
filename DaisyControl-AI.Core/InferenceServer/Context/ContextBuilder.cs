@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.Text;
 using DaisyControl_AI.Core.DaisyMind;
 using Humanizer;
 
@@ -65,7 +64,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
             stringBuilder.AppendLine($"[It's {{{{char}}}} turn to reply.]<|im_end|>");
 
             string context = stringBuilder.ToString();
-            context = context.Replace("{{char}}", daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName);
+            context = context.Replace("{{char}}", daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName);
 
             string interlocutorRef = daisyMind.DaisyMemory.User.Global.UserInfo.FirstName;
             if (interlocutorRef.ToLowerInvariant().Trim() == "unknown")
@@ -234,7 +233,7 @@ namespace DaisyControl_AI.Core.InferenceServer.Context
                 stringBuilder.AppendLine($"You are:");
             }
 
-            stringBuilder.AppendLine($"[Name({daisyMind.DaisyMemory.User.Global.AIGlobal.FirstName} {daisyMind.DaisyMemory.User.Global.AIGlobal.LastName})");
+            stringBuilder.AppendLine($"[Name({daisyMind.DaisyMemory.Self.Global.PersonaInfo.FirstName} {daisyMind.DaisyMemory.Self.Global.PersonaInfo.LastName})");
             stringBuilder.AppendLine($"Gender(Female)");
             stringBuilder.AppendLine($"Genitals(Vagina)");
             stringBuilder.AppendLine($"Age(25)");

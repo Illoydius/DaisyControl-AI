@@ -1,16 +1,17 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
+using DaisyControl_AI.Storage.RequestExecutors.Main;
 
-namespace DaisyControl_AI.Storage.RequestExecutors.Main
+namespace DaisyControl_AI.Storage.RequestExecutors.Users
 {
     public class DaisyControlGetUsersWithWorkingStatusRequestExecutor : IMainRequestExecutor
     {
         private DaisyControlGetUsersWithWorkingStatusRequestDto daisyControlGetUserDto = null;
-        private IDaisyControlDal daisyControlDal = null;
+        private IUsersDal daisyControlDal = null;
         private object response = null;
 
         public DaisyControlGetUsersWithWorkingStatusRequestExecutor(
-            IDaisyControlDal daisyControlDal,
+            IUsersDal daisyControlDal,
             DaisyControlGetUsersWithWorkingStatusRequestDto daisyControlGetUserDto)
         {
             this.daisyControlGetUserDto = daisyControlGetUserDto;

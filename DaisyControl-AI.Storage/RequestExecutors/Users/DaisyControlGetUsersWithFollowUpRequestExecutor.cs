@@ -1,17 +1,18 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
+using DaisyControl_AI.Storage.RequestExecutors.Main;
 
-namespace DaisyControl_AI.Storage.RequestExecutors.Main
+namespace DaisyControl_AI.Storage.RequestExecutors.Users
 {
-    public class DaisyControlGetUsersWithInferenceTasksRequestExecutor : IMainRequestExecutor
+    public class DaisyControlGetUsersWithFollowUpsRequestExecutor : IMainRequestExecutor
     {
-        private DaisyControlGetUsersWithInferenceTasksRequestDto daisyControlGetUserDto = null;
-        private IDaisyControlDal daisyControlDal = null;
+        private DaisyControlGetUsersWithFollowUpsRequestDto daisyControlGetUserDto = null;
+        private IUsersDal daisyControlDal = null;
         private object response = null;
 
-        public DaisyControlGetUsersWithInferenceTasksRequestExecutor(
-            IDaisyControlDal daisyControlDal,
-            DaisyControlGetUsersWithInferenceTasksRequestDto daisyControlGetUserDto)
+        public DaisyControlGetUsersWithFollowUpsRequestExecutor(
+            IUsersDal daisyControlDal,
+            DaisyControlGetUsersWithFollowUpsRequestDto daisyControlGetUserDto)
         {
             this.daisyControlGetUserDto = daisyControlGetUserDto;
             this.daisyControlDal = daisyControlDal;
@@ -20,7 +21,7 @@ namespace DaisyControl_AI.Storage.RequestExecutors.Main
         public async Task<bool> ExecuteAsync()
         {
             // Get chunk of users from storage that have pending inference tasks
-            var usersToProcess = await daisyControlDal.TryGetUsersWithPendingInferenceTasksAsync(daisyControlGetUserDto.MaxNbUsersToFetch);
+            var usersToProcess = await daisyControlDal.TryGetUsersWithFollowUpsRequestsAsync(daisyControlGetUserDto.MaxNbUsersToFetch);
 
             if (usersToProcess == null)
             {

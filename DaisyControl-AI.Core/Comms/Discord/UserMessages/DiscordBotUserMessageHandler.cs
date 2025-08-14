@@ -67,14 +67,14 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
         {
             if (socketUserMessage?.Author == null)
             {
-                LoggingManager.LogToFile("ec9c3c64-8abc-4b94-8a65-14ee47d44f62", $"Discord bot received a new invalid message: [{socketUserMessage}]. Full message object=[{JsonSerializer.Serialize(socketUserMessage)}].");
+                LoggingManager.LogToFile("ec9c3c64-8abc-4b94-8a65-14ee47d44f62", $"Discord bot received a new invalid message (missing Author): [{socketUserMessage}]. Full message object=[{JsonSerializer.Serialize(socketUserMessage)}].");
                 return;
             }
 
             LoggingManager.LogToFile("73d4fa09-9410-4408-93e8-921570260372", $"Discord bot received a new message: [{socketUserMessage}] from [{socketUserMessage.Author.Username}({socketUserMessage.Author.Id})].", aLogVerbosity: LoggingManager.LogVerbosity.Verbose);
 
             // Get the user from storage
-            DaisyControlUserDto user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 120);
+            DaisyControlUserDto user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 900);
             DaisyControlMind daisyMind = null;
 
             try
@@ -90,13 +90,14 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                         return;
                     }
 
-                    // Generate some goals BEFORE processing the new message
-                    await GoalsDecisionManager.ReflectOnImmediateGoalsForNextAvailableUser();
-                    user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 600);
+                    // Generate some goals BEFORE processing the new message as we just added a NEW user
+                    await GoalsDecisionManager.ReflectOnImmediateGoalsForNextAvailableUser(user);
+                    user = await ReserveUserForProcessing(socketUserMessage.Author.Id, 900);
                 }
 
                 if (user == null)
                 {
+                    LoggingManager.LogToFile("23a31ecf-8f4c-49c2-a60f-b57aa69efc15", $"Discord bot couldn't create user [{socketUserMessage.Author.Id}]. Unknown reason.");
                     return;
                 }
 
@@ -121,8 +122,8 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
                 // Response was correctly received from user. Save the user message to storage
                 daisyMind.DaisyMemory.User.Global.MessagesHistory ??= new();
                 daisyMind.DaisyMemory.User.Global.MessagesHistory.Add(userMessage);
-                daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.UtcNow;
-                daisyMind.DaisyMemory.User.Global.NextFollowUpAvailabilityAtUtc = DateTime.UtcNow.AddHours(24);
+                daisyMind.DaisyMemory.User.Global.NextMessageToProcessOperationAvailabilityAtUtc = DateTime.MaxValue;// The AI will never check this message. She needs to 'think' about if she wants to check the new message from this User 'now', 'soon' or when her schedule allows it (this is computed in AIWorker.cs)
+                daisyMind.DaisyMemory.User.Global.NextFollowUpAvailabilityAtUtc = DateTime.MaxValue;// The AI shouldn't try to contact the User any time soon as we have at least one message to process beforehand. After the message will be processed, Daisy will 'decide' if she wants to follow up or not
 
             } finally
             {
@@ -133,14 +134,14 @@ namespace DaisyControl_AI.Core.Comms.Discord.UserMessages
 
                     if (userToUpdate != null)
                     {
-                        userToUpdate.Status = Storage.Dtos.UserStatus.Ready;
+                        userToUpdate.Status = Storage.Dtos.UserStatus.UserMessagePending;
                         bool storageUpdateSuccess = await usersHttpClient.UpdateUserAsync(userToUpdate).ConfigureAwait(false);
 
                         if (!storageUpdateSuccess)
                         {
                             ++retryIterator;
 
-                            if (retryIterator >= 300)
+                            if (retryIterator >= 900)
                             {
                                 LoggingManager.LogToFile("62ae5779-84b1-4127-b868-22d097d3273a", $"Message from user [{socketUserMessage.Author.Id}] was'nt registered properly in storage. The AI will ignore this message from the User [{socketUserMessage.Author.Username}].");
                                 break;

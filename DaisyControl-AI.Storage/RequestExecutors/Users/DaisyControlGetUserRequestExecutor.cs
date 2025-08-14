@@ -1,17 +1,18 @@
 ﻿using DaisyControl_AI.Storage.DataAccessLayer;
 using DaisyControl_AI.Storage.Dtos;
 using DaisyControl_AI.Storage.Dtos.Requests.Users;
+using DaisyControl_AI.Storage.RequestExecutors.Main;
 
-namespace DaisyControl_AI.Storage.RequestExecutors.Main.Users
+namespace DaisyControl_AI.Storage.RequestExecutors.Users
 {
     public class DaisyControlGetUserRequestExecutor : IMainRequestExecutor
     {
         private DaisyControlGetUserRequestDto daisyControlGetUserDto = null;
-        private IDaisyControlDal daisyControlDal = null;
+        private IUsersDal daisyControlDal = null;
         private object response = null;
 
         public DaisyControlGetUserRequestExecutor(
-            IDaisyControlDal daisyControlDal,
+            IUsersDal daisyControlDal,
             DaisyControlGetUserRequestDto daisyControlGetUserDto)
         {
             this.daisyControlGetUserDto = daisyControlGetUserDto;
